@@ -5,13 +5,12 @@ import { formatEther, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import type { Market } from "@/lib/contract";
 import type { AppIntent, MarketDraft } from "@/lib/intent";
+import {
+  getMemoryStore,
+  memoryKey,
+  type ChatMessage,
+} from "@/lib/memoryStore";
 import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
-
-interface ChatMessage {
-  role: "user" | "copilot";
-  text: string;
-  intent?: AppIntent;
-}
 
 const WELCOME: ChatMessage = {
   role: "copilot",
@@ -82,11 +81,44 @@ export function CopilotPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // Messages restored from memory render instantly; only messages appended
+  // this session animate.
+  const [animateFrom, setAnimateFrom] = useState(1);
   const feedRef = useRef<HTMLDivElement>(null);
+  const chatKey = memoryKey(address);
+
+  // Load the wallet's persistent chat memory; re-runs on account switch.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const store = getMemoryStore();
+      const stored = store ? await store.load(chatKey) : null;
+      if (cancelled) return;
+      const restored =
+        stored && stored.messages.length > 0 ? stored.messages : [WELCOME];
+      setMessages(restored);
+      setAnimateFrom(restored.length);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chatKey]);
+
+  // Persist on every change (skip the pristine welcome-only state).
+  useEffect(() => {
+    if (messages.length <= 1) return;
+    getMemoryStore()?.save(chatKey, { messages, updatedAt: Date.now() });
+  }, [messages, chatKey]);
 
   useEffect(() => {
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
   }, [messages, busy]);
+
+  function reset() {
+    getMemoryStore()?.clear(chatKey);
+    setMessages([WELCOME]);
+    setAnimateFrom(1);
+  }
 
   async function send(text?: string) {
     const prompt = (text ?? input).trim();
@@ -102,6 +134,11 @@ export function CopilotPanel({
         body: JSON.stringify({
           prompt,
           userWallet: address ?? null,
+          // Recent history gives the AI cross-session context
+          // ("hedge that position", "same again but NO").
+          history: messages
+            .slice(-8)
+            .map((m) => ({ role: m.role, text: m.text })),
           currentMarketContext: markets.map((m) => ({
             id: m.id,
             title: m.title,
@@ -131,7 +168,19 @@ export function CopilotPanel({
     <aside className="copilot" id="copilot">
       <div className="copilot-head">
         <span className="label">AI CO-PILOT</span>
-        <span className="copilot-dot" />
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {messages.length > 1 && (
+            <button
+              className="chip"
+              style={{ padding: "4px 8px", fontSize: 9 }}
+              onClick={reset}
+              title="Clear this wallet's chat memory"
+            >
+              RESET
+            </button>
+          )}
+          <span className="copilot-dot" />
+        </div>
       </div>
 
       <div className="copilot-feed" ref={feedRef}>
@@ -148,7 +197,11 @@ export function CopilotPanel({
                   {msg.intent?.engine === "offline-fallback" ? " · OFFLINE" : ""}
                 </span>
               )}
-              {msg.role === "copilot" ? <Typewriter text={msg.text} /> : msg.text}
+              {msg.role === "copilot" && i >= animateFrom ? (
+                <Typewriter text={msg.text} />
+              ) : (
+                msg.text
+              )}
 
               {msg.intent &&
                 (msg.intent.outcomeTrade || msg.intent.dexTrade) && (
