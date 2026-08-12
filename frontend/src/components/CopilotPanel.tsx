@@ -86,6 +86,10 @@ export function CopilotPanel({
   const [animateFrom, setAnimateFrom] = useState(1);
   const feedRef = useRef<HTMLDivElement>(null);
   const chatKey = memoryKey(address);
+  // Which key the current `messages` state actually belongs to. On a wallet
+  // switch, chatKey changes before the async load replaces messages - the
+  // persist effect must not write the old wallet's chat under the new key.
+  const loadedKeyRef = useRef<string | null>(null);
 
   // Load the wallet's persistent chat memory; re-runs on account switch.
   useEffect(() => {
@@ -98,15 +102,18 @@ export function CopilotPanel({
         stored && stored.messages.length > 0 ? stored.messages : [WELCOME];
       setMessages(restored);
       setAnimateFrom(restored.length);
+      loadedKeyRef.current = chatKey;
     })();
     return () => {
       cancelled = true;
     };
   }, [chatKey]);
 
-  // Persist on every change (skip the pristine welcome-only state).
+  // Persist on every change (skip the pristine welcome-only state, and never
+  // persist messages that belong to a different key than they were loaded for).
   useEffect(() => {
     if (messages.length <= 1) return;
+    if (loadedKeyRef.current !== chatKey) return;
     getMemoryStore()?.save(chatKey, { messages, updatedAt: Date.now() });
   }, [messages, chatKey]);
 
