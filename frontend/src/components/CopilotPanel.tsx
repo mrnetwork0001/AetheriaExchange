@@ -1,0 +1,144 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { formatEther } from "viem";
+import { useAccount } from "wagmi";
+import type { Market } from "@/lib/contract";
+import type { AppIntent } from "@/lib/intent";
+
+interface ChatMessage {
+  role: "user" | "copilot";
+  text: string;
+  intent?: AppIntent;
+}
+
+const WELCOME: ChatMessage = {
+  role: "copilot",
+  text: "Co-pilot online. Ask about a market, or tell me a position — e.g. “bet 5 OKB YES on market 0 and hedge it”. I turn intent into a 1-click trade ticket.",
+};
+
+export function CopilotPanel({
+  markets,
+  onExecute,
+}: {
+  markets: Market[];
+  onExecute: (intent: AppIntent) => void;
+}) {
+  const { address } = useAccount();
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
+  }, [messages, busy]);
+
+  async function send() {
+    const prompt = input.trim();
+    if (!prompt || busy) return;
+    setInput("");
+    setMessages((m) => [...m, { role: "user", text: prompt }]);
+    setBusy(true);
+
+    try {
+      const res = await fetch("/api/ai/intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          userWallet: address ?? null,
+          currentMarketContext: markets.map((m) => ({
+            id: m.id,
+            title: m.title,
+            category: m.category,
+            yesPoolOkb: formatEther(m.yesPool),
+            noPoolOkb: formatEther(m.noPool),
+            endTime: m.endTime,
+          })),
+        }),
+      });
+      const intent: AppIntent = await res.json();
+      setMessages((m) => [
+        ...m,
+        { role: "copilot", text: intent.explanation, intent },
+      ]);
+    } catch {
+      setMessages((m) => [
+        ...m,
+        { role: "copilot", text: "Intent engine unreachable. Try again." },
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <aside className="copilot">
+      <div className="copilot-head">
+        <span className="label">AI CO-PILOT</span>
+        <span className="copilot-dot" />
+      </div>
+
+      <div className="copilot-feed" ref={feedRef}>
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`msg ${msg.role === "user" ? "msg-user" : "msg-copilot"}`}
+          >
+            {msg.role === "copilot" && (
+              <span className="label who" style={{ fontSize: 9 }}>
+                CO-PILOT{msg.intent?.engine === "offline-fallback" ? " · OFFLINE" : ""}
+              </span>
+            )}
+            {msg.text}
+
+            {msg.intent &&
+              (msg.intent.outcomeTrade || msg.intent.dexTrade) && (
+                <div className="intent-card">
+                  <div className="label" style={{ fontSize: 9 }}>
+                    {msg.intent.intentType.replace("_", " ")}
+                  </div>
+                  <div className="summary">{msg.intent.summary}</div>
+                  {msg.intent.outcomeTrade && (
+                    <div className="intent-leg">
+                      LEG 1 · OUTCOME — {msg.intent.outcomeTrade.amount} OKB{" "}
+                      {msg.intent.outcomeTrade.isYes ? "YES" : "NO"} on market #
+                      {msg.intent.outcomeTrade.marketId}
+                    </div>
+                  )}
+                  {msg.intent.dexTrade && (
+                    <div className="intent-leg">
+                      LEG {msg.intent.outcomeTrade ? 2 : 1} · OKX DEX —{" "}
+                      {msg.intent.dexTrade.amount} {msg.intent.dexTrade.tokenIn}{" "}
+                      → {msg.intent.dexTrade.tokenOut}
+                    </div>
+                  )}
+                  <button
+                    className="intent-execute"
+                    onClick={() => onExecute(msg.intent!)}
+                  >
+                    PREPARE EXECUTION
+                  </button>
+                </div>
+              )}
+          </div>
+        ))}
+        {busy && <div className="thinking">ANALYZING MARKET INTENT…</div>}
+      </div>
+
+      <div className="copilot-input">
+        <input
+          value={input}
+          placeholder="ASK THE CO-PILOT_"
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          disabled={busy}
+        />
+        <button onClick={send} disabled={busy || !input.trim()}>
+          SEND
+        </button>
+      </div>
+    </aside>
+  );
+}
