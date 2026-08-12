@@ -13,7 +13,7 @@ module.exports = {
   networks: {
     xlayerTestnet: {
       url: "https://testrpc.xlayer.tech",
-      chainId: 195,
+      chainId: 1952,
       accounts,
     },
     xlayerMainnet: {
@@ -31,7 +31,7 @@ module.exports = {
     customChains: [
       {
         network: "xlayerTestnet",
-        chainId: 195,
+        chainId: 1952,
         urls: {
           apiURL:
             "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/XLAYER_TESTNET",

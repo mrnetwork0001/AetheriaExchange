@@ -36,7 +36,7 @@ npm run dev        # http://localhost:3000
 ### Going live
 
 ```bash
-# Deploy the outcome venue to X Layer Testnet (chain 195)
+# Deploy the outcome venue to X Layer Testnet (chain 1952)
 cd contracts
 cp .env.example .env          # add PRIVATE_KEY
 npm run deploy:testnet        # writes address + ABI into frontend/src/contracts/config.json
@@ -57,7 +57,7 @@ uses a labeled deterministic fallback; without OKX API keys the DEX leg reports
 
 | Network         | Chain ID | RPC                          |
 | --------------- | -------- | ---------------------------- |
-| X Layer Testnet | 195      | https://testrpc.xlayer.tech  |
+| X Layer Testnet | 1952     | https://testrpc.xlayer.tech  |
 | X Layer Mainnet | 196      | https://rpc.xlayer.tech      |
 
 Native gas/settlement token: **OKB**. Explorer: OKLink (X Layer).
