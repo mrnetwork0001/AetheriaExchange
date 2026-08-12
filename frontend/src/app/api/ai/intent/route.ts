@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
+import { aiChatJson } from "@/lib/aiChat";
 import type { AppIntent } from "@/lib/intent";
 
 export const runtime = "nodejs";
@@ -96,11 +96,13 @@ Rules:
 - If the user asks to CREATE a market - from a topic, event, or news headline - use intentType MARKET_DRAFT with both trades null and fill "marketDraft": a precise, objectively resolvable YES/NO question (name the resolution criterion; never a matter of opinion), the closest category, an endTimeIso in the future set shortly before the event resolves (default 7–30 days out when the timing is unclear), and a one-sentence rationale. Do not duplicate an existing market from the provided context - refine or decline instead.
 - PULSE is the category for short-dated (usually 24h) markets on X Layer's own public metrics - daily active wallets, OKB DEX volume, gas burnt. Pulse questions must name the metric, the threshold, the measurement window, and the public data source; close them at the end of the measurement window.
 - "explanation" is shown to the user: plain language, one short paragraph, always ending with a one-sentence risk note. Never promise or guarantee returns.
-- If the request is ambiguous, prefer MARKET_ANALYSIS and ask for the missing detail in "explanation" rather than inventing a trade.`;
+- If the request is ambiguous, prefer MARKET_ANALYSIS and ask for the missing detail in "explanation" rather than inventing a trade.
+- You may receive recent conversation history (the user's persistent memory). Use it to resolve references like "hedge that position" or "same again but NO" - but the current prompt always wins over history.`;
 
 interface IntentRequest {
   prompt?: string;
   userWallet?: string;
+  history?: { role: string; text: string }[];
   currentMarketContext?: unknown;
 }
 
@@ -195,55 +197,120 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(offlineFallback(prompt));
-  }
+  const result = await aiChatJson({
+    system: SYSTEM_PROMPT,
+    user: JSON.stringify({
+      prompt,
+      userWallet: body.userWallet ?? null,
+      history: Array.isArray(body.history)
+        ? body.history.slice(-8).map((h) => ({
+            role: h?.role === "user" ? "user" : "copilot",
+            text: String(h?.text ?? "").slice(0, 500),
+          }))
+        : [],
+      currentMarketContext: body.currentMarketContext ?? [],
+    }),
+    schema: INTENT_SCHEMA as unknown as Record<string, unknown>,
+    maxTokens: 4096,
+  });
 
-  const client = new Anthropic();
-
-  try {
-    const response = await client.messages.create({
-      model: "claude-opus-5",
-      max_tokens: 4096,
-      output_config: {
-        effort: "low",
-        format: { type: "json_schema", schema: INTENT_SCHEMA },
-      },
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: JSON.stringify({
-            prompt,
-            userWallet: body.userWallet ?? null,
-            currentMarketContext: body.currentMarketContext ?? [],
-          }),
-        },
-      ],
-    });
-
-    if (response.stop_reason === "refusal") {
+  if (!result.ok) {
+    if (result.reason === "unconfigured") {
+      return NextResponse.json(offlineFallback(prompt));
+    }
+    if (result.reason === "refusal") {
       return NextResponse.json({
         intentType: "MARKET_ANALYSIS",
         summary: "Request declined",
         outcomeTrade: null,
         dexTrade: null,
+        marketDraft: null,
         explanation:
           "The co-pilot declined this request. Try rephrasing it as a market question or a simple trade instruction.",
-        engine: "claude-opus-5",
       } satisfies AppIntent);
     }
-
-    const text = response.content.find((b) => b.type === "text")?.text;
-    if (!text) {
-      return NextResponse.json(engineUnavailable());
-    }
-
-    const intent = JSON.parse(text) as AppIntent;
-    intent.engine = "claude-opus-5";
-    return NextResponse.json(intent);
-  } catch (err) {
-    console.error("AI intent engine error:", err);
     return NextResponse.json(engineUnavailable());
   }
+
+  const intent = sanitizeIntent(result.json, result.engine);
+  if (!intent) {
+    return NextResponse.json(engineUnavailable());
+  }
+  return NextResponse.json(intent);
+}
+
+// Schema conformance is only API-guaranteed on the Anthropic path; 0G's open
+// models get the schema as a prompt suggestion, so every field is validated
+// or coerced here before it can reach the execution flow. Sub-objects that
+// fail validation are nulled; a broken core shape returns null.
+const DEX_TOKENS = ["OKB", "WOKB", "USDT", "USDC"];
+const AMOUNT_RE = /^\d+(\.\d+)?$/;
+
+function sanitizeIntent(raw: any, engine: string): AppIntent | null {
+  if (
+    !raw ||
+    typeof raw.intentType !== "string" ||
+    typeof raw.explanation !== "string"
+  ) {
+    return null;
+  }
+
+  let outcomeTrade: AppIntent["outcomeTrade"] = null;
+  if (raw.outcomeTrade && typeof raw.outcomeTrade === "object") {
+    const marketId = Number(raw.outcomeTrade.marketId);
+    const amount = String(raw.outcomeTrade.amount ?? "");
+    if (
+      Number.isInteger(marketId) &&
+      marketId >= 0 &&
+      typeof raw.outcomeTrade.isYes === "boolean" &&
+      AMOUNT_RE.test(amount)
+    ) {
+      outcomeTrade = { marketId, isYes: raw.outcomeTrade.isYes, amount };
+    }
+  }
+
+  let dexTrade: AppIntent["dexTrade"] = null;
+  if (raw.dexTrade && typeof raw.dexTrade === "object") {
+    const tokenIn = String(raw.dexTrade.tokenIn ?? "").toUpperCase();
+    const tokenOut = String(raw.dexTrade.tokenOut ?? "").toUpperCase();
+    const amount = String(raw.dexTrade.amount ?? "");
+    if (
+      DEX_TOKENS.includes(tokenIn) &&
+      DEX_TOKENS.includes(tokenOut) &&
+      tokenIn !== tokenOut &&
+      AMOUNT_RE.test(amount)
+    ) {
+      dexTrade = {
+        tokenIn,
+        tokenOut,
+        amount,
+        reasoning: String(raw.dexTrade.reasoning ?? ""),
+      };
+    }
+  }
+
+  let marketDraft: AppIntent["marketDraft"] = null;
+  if (
+    raw.marketDraft &&
+    typeof raw.marketDraft === "object" &&
+    typeof raw.marketDraft.title === "string" &&
+    raw.marketDraft.title.trim().length > 0
+  ) {
+    marketDraft = {
+      title: raw.marketDraft.title.trim(),
+      category: String(raw.marketDraft.category ?? "OTHER").toUpperCase(),
+      endTimeIso: String(raw.marketDraft.endTimeIso ?? ""),
+      rationale: String(raw.marketDraft.rationale ?? ""),
+    };
+  }
+
+  return {
+    intentType: raw.intentType as AppIntent["intentType"],
+    summary: typeof raw.summary === "string" ? raw.summary : "",
+    outcomeTrade,
+    dexTrade,
+    marketDraft,
+    explanation: raw.explanation,
+    engine,
+  };
 }
