@@ -15,7 +15,15 @@ import { useActivity } from "@/hooks/useActivity";
 import { useMarkets } from "@/hooks/useMarkets";
 import { usePositions } from "@/hooks/usePositions";
 import type { Market } from "@/lib/contract";
-import type { AppIntent } from "@/lib/intent";
+import type { AppIntent, MarketDraft } from "@/lib/intent";
+import type { CreateMarketInitial } from "@/components/CreateMarketModal";
+
+function isoToLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime()) || d.getTime() <= Date.now()) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 type Tab = "markets" | "positions";
 
@@ -37,6 +45,9 @@ export default function Home() {
   // the polled markets list instead of a frozen snapshot.
   const [detailId, setDetailId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createDraft, setCreateDraft] = useState<CreateMarketInitial | null>(
+    null
+  );
   const deepLinkHandled = useRef(false);
 
   const detailMarket = useMemo(
@@ -79,6 +90,14 @@ export default function Home() {
 
   function openDetail(marketId: number) {
     if (markets.some((m) => m.id === marketId)) setDetailId(marketId);
+  }
+
+  function openDraftTicket(draft: MarketDraft) {
+    setCreateDraft({
+      title: draft.title,
+      category: draft.category,
+      endLocal: isoToLocalInput(draft.endTimeIso),
+    });
   }
 
   return (
@@ -175,7 +194,11 @@ export default function Home() {
           )}
         </div>
 
-        <CopilotPanel markets={markets} onExecute={setActiveIntent} />
+        <CopilotPanel
+          markets={markets}
+          onExecute={setActiveIntent}
+          onDraft={openDraftTicket}
+        />
       </div>
 
       <LandingSections />
@@ -209,10 +232,15 @@ export default function Home() {
         />
       )}
 
-      {createOpen && (
+      {(createOpen || createDraft) && (
         <CreateMarketModal
+          key={createDraft?.title ?? "blank"}
           live={live}
-          onClose={() => setCreateOpen(false)}
+          initial={createDraft ?? undefined}
+          onClose={() => {
+            setCreateOpen(false);
+            setCreateDraft(null);
+          }}
           onCreated={refetch}
         />
       )}

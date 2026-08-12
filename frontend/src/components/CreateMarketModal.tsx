@@ -17,12 +17,20 @@ type SubmitState =
   | { phase: "pending"; note: string }
   | { phase: "error"; reason: string };
 
+export interface CreateMarketInitial {
+  title?: string;
+  category?: string;
+  endLocal?: string;
+}
+
 export function CreateMarketModal({
   live,
+  initial,
   onClose,
   onCreated,
 }: {
   live: boolean;
+  initial?: CreateMarketInitial;
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -33,9 +41,13 @@ export function CreateMarketModal({
   const { writeContractAsync } = useWriteContract();
   const venue = contractAddress(chainId);
 
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("CRYPTO");
-  const [endLocal, setEndLocal] = useState("");
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [category, setCategory] = useState(
+    initial?.category && CATEGORIES.includes(initial.category)
+      ? initial.category
+      : "CRYPTO"
+  );
+  const [endLocal, setEndLocal] = useState(initial?.endLocal ?? "");
   const [state, setState] = useState<SubmitState>({ phase: "idle" });
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { formatEther, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import type { Market } from "@/lib/contract";
-import type { AppIntent } from "@/lib/intent";
+import type { AppIntent, MarketDraft } from "@/lib/intent";
 import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
 
 interface ChatMessage {
@@ -21,7 +21,7 @@ const WELCOME: ChatMessage = {
 const SUGGESTED_PROMPTS = [
   "Bet 2 OKB YES on market 0 and hedge it",
   "Which market has the best risk/reward?",
-  "Bet 1 OKB NO on the Fed market",
+  "Create a market about the next ETH upgrade shipping in Q4",
   "How would I hedge BTC exposure with USDT?",
 ];
 
@@ -72,9 +72,11 @@ function outcomeQuote(intent: AppIntent, markets: Market[]): string | null {
 export function CopilotPanel({
   markets,
   onExecute,
+  onDraft,
 }: {
   markets: Market[];
   onExecute: (intent: AppIntent) => void;
+  onDraft: (draft: MarketDraft) => void;
 }) {
   const { address } = useAccount();
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
@@ -178,6 +180,27 @@ export function CopilotPanel({
                     </button>
                   </div>
                 )}
+
+              {msg.intent?.marketDraft && (
+                <div className="intent-card">
+                  <div className="label" style={{ fontSize: 9 }}>
+                    MARKET DRAFT
+                  </div>
+                  <div className="summary">{msg.intent.marketDraft.title}</div>
+                  <div className="intent-leg">
+                    {msg.intent.marketDraft.category} · CLOSES{" "}
+                    {new Date(
+                      msg.intent.marketDraft.endTimeIso
+                    ).toLocaleString()}
+                  </div>
+                  <button
+                    className="intent-execute"
+                    onClick={() => onDraft(msg.intent!.marketDraft!)}
+                  >
+                    OPEN DEPLOY TICKET
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}

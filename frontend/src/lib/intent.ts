@@ -3,7 +3,16 @@ export type IntentType =
   | "OUTCOME_BET"
   | "DEX_HEDGE"
   | "DUAL_STRATEGY"
-  | "MARKET_ANALYSIS";
+  | "MARKET_ANALYSIS"
+  | "MARKET_DRAFT";
+
+// AI-drafted market proposal (from a headline or topic the user gives).
+export interface MarketDraft {
+  title: string; // precise, objectively resolvable YES/NO question
+  category: string;
+  endTimeIso: string; // ISO 8601 — when trading should close
+  rationale: string;
+}
 
 export interface OutcomeTrade {
   marketId: number;
@@ -23,6 +32,7 @@ export interface AppIntent {
   summary: string;
   outcomeTrade: OutcomeTrade | null;
   dexTrade: DexTrade | null;
+  marketDraft?: MarketDraft | null;
   explanation: string;
   engine?: string; // "claude-opus-5" | "offline-fallback"
 }
