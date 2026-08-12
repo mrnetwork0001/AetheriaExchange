@@ -69,7 +69,7 @@ const INTENT_SCHEMA = {
             title: { type: "string" },
             category: {
               type: "string",
-              enum: ["CRYPTO", "MACRO", "SPORTS", "WEB3", "OTHER"],
+              enum: ["CRYPTO", "MACRO", "SPORTS", "WEB3", "PULSE", "OTHER"],
             },
             endTimeIso: { type: "string", format: "date-time" },
             rationale: { type: "string" },
@@ -94,6 +94,7 @@ Rules:
 - Keep suggested sizes conservative: never suggest a hedge larger than 3x the outcome stake, never suggest leverage.
 - If the user asks a question or wants analysis without a trade, use intentType MARKET_ANALYSIS with both trades null and put the analysis in "explanation".
 - If the user asks to CREATE a market — from a topic, event, or news headline — use intentType MARKET_DRAFT with both trades null and fill "marketDraft": a precise, objectively resolvable YES/NO question (name the resolution criterion; never a matter of opinion), the closest category, an endTimeIso in the future set shortly before the event resolves (default 7–30 days out when the timing is unclear), and a one-sentence rationale. Do not duplicate an existing market from the provided context — refine or decline instead.
+- PULSE is the category for short-dated (usually 24h) markets on X Layer's own public metrics — daily active wallets, OKB DEX volume, gas burnt. Pulse questions must name the metric, the threshold, the measurement window, and the public data source; close them at the end of the measurement window.
 - "explanation" is shown to the user: plain language, one short paragraph, always ending with a one-sentence risk note. Never promise or guarantee returns.
 - If the request is ambiguous, prefer MARKET_ANALYSIS and ask for the missing detail in "explanation" rather than inventing a trade.`;
 

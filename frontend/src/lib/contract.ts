@@ -70,4 +70,28 @@ export const DEMO_MARKETS: Market[] = [
     noPool: 2_600_000_000_000_000_000n,
     live: false,
   },
+  // PULSE: short-dated markets on X Layer's own metrics — the chain
+  // speculating on itself, resolved daily from public onchain data.
+  {
+    id: 4,
+    title: "X Layer daily active wallets close above 50K today",
+    category: "PULSE",
+    endTime: Math.floor(Date.now() / 1000) + 86400,
+    status: 0,
+    outcome: false,
+    yesPool: 3_300_000_000_000_000_000n,
+    noPool: 1_700_000_000_000_000_000n,
+    live: false,
+  },
+  {
+    id: 5,
+    title: "OKB 24h DEX volume finishes above $45M today",
+    category: "PULSE",
+    endTime: Math.floor(Date.now() / 1000) + 86400,
+    status: 0,
+    outcome: false,
+    yesPool: 2_100_000_000_000_000_000n,
+    noPool: 2_900_000_000_000_000_000n,
+    live: false,
+  },
 ];

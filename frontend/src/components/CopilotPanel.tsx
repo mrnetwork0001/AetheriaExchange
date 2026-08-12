@@ -21,7 +21,7 @@ const WELCOME: ChatMessage = {
 const SUGGESTED_PROMPTS = [
   "Bet 2 OKB YES on market 0 and hedge it",
   "Which market has the best risk/reward?",
-  "Create a market about the next ETH upgrade shipping in Q4",
+  "Create today's X Layer pulse market on active wallets",
   "How would I hedge BTC exposure with USDT?",
 ];
 
