@@ -6,6 +6,7 @@ import { CopilotPanel } from "@/components/CopilotPanel";
 import { CreateMarketModal } from "@/components/CreateMarketModal";
 import { ExecutionModal } from "@/components/ExecutionModal";
 import { Header } from "@/components/Header";
+import { LandingSections } from "@/components/LandingSections";
 import { MarketCard } from "@/components/MarketCard";
 import { MarketDetailModal } from "@/components/MarketDetailModal";
 import { PositionsPanel } from "@/components/PositionsPanel";
@@ -176,6 +177,8 @@ export default function Home() {
 
         <CopilotPanel markets={markets} onExecute={setActiveIntent} />
       </div>
+
+      <LandingSections />
 
       <StatFooter />
 
