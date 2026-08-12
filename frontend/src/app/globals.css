@@ -125,6 +125,16 @@ button {
   gap: 14px;
 }
 
+.brand-logo {
+  height: 46px;
+  width: auto;
+  display: block;
+}
+
+.brand-logo-footer {
+  height: 40px;
+}
+
 .brand-mark {
   width: 40px;
   height: 40px;

@@ -63,13 +63,12 @@ export function StatFooter() {
       <div className="footer-grid">
         <div className="footer-brand">
           <div className="brand">
-            <div className="brand-mark">A</div>
-            <div>
-              <div className="brand-name">AETHERIA</div>
-              <div className="label" style={{ fontSize: 9 }}>
-                EXCHANGE OS
-              </div>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/aetheria-header.png"
+              alt="Aetheria Exchange"
+              className="brand-logo brand-logo-footer"
+            />
           </div>
           <p className="footer-desc">
             Event-driven outcome markets with an AI trading co-pilot on X

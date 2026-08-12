@@ -29,13 +29,12 @@ export function Header() {
   return (
     <header className="header">
       <div className="brand">
-        <div className="brand-mark">A</div>
-        <div>
-          <div className="brand-name">AETHERIA</div>
-          <div className="label" style={{ fontSize: 9 }}>
-            EXCHANGE OS
-          </div>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/aetheria-header.png"
+          alt="Aetheria Exchange"
+          className="brand-logo"
+        />
       </div>
 
       <div className="header-right">
