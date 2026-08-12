@@ -1,17 +1,17 @@
-# Aetheria Exchange — X Layer AI Season Hackathon Submission
+# Aetheria Exchange - X Layer AI Season Hackathon Submission
 
 **Project**: Aetheria Exchange (@AetheriaEx)
-**One-liner**: An AI market co-pilot + outcome exchange on X Layer — natural
+**One-liner**: An AI market co-pilot + outcome exchange on X Layer - natural
 language in, a signable outcome bet + correlated OKX DEX hedge out, in one
 click, fully self-custodied.
 
 | | |
 |---|---|
-| Live dApp | _(deployment URL — added at launch)_ |
+| Live dApp | _(deployment URL - added at launch)_ |
 | GitHub | https://github.com/mrnetwork0001/AetheriaExchange |
 | X account | https://x.com/AetheriaEx |
 | Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
-| Mainnet venue (chain 196) | _(address — added at launch)_ |
+| Mainnet venue (chain 196) | _(address - added at launch)_ |
 
 ---
 
@@ -19,12 +19,12 @@ click, fully self-custodied.
 
 Aetheria pairs two engines:
 
-1. **A parimutuel outcome venue** (`OutcomeMarket.sol`) — permissionless
+1. **A parimutuel outcome venue** (`OutcomeMarket.sol`) - permissionless
    YES/NO markets settled in native OKB. Winners split the losing pool
    pro-rata; a 2% fee on the losing pool funds the protocol. 8/8 tests
    passing; refunds on cancellation and one-sided markets.
-2. **An AI co-pilot** — a serverless intent engine (Claude, JSON-schema-
-   constrained output) that turns natural language into executable structure:
+2. **An AI co-pilot** - a serverless intent engine (schema-constrained LLM,
+   Anthropic or 0G Compute) that turns natural language into executable structure:
    `{ outcomeTrade, dexTrade, marketDraft, explanation }`. It quotes implied
    odds and estimated payout before anything is signed.
 
@@ -68,20 +68,21 @@ technical depth.
 
 **Anti-wash stance, explicitly**: the market-maker agent trades only on the
 outcome venue and generates zero DEX volume by design. All OKX DEX volume is
-user-signed, economically motivated flow — the only kind the grant rules
+user-signed, economically motivated flow - the only kind the grant rules
 count.
 
 ## Judge test drive (3 minutes)
 
-1. Open the dApp — works instantly in labeled OFFLINE PREVIEW mode, no setup.
+1. Open the dApp - it reads the LIVE testnet venue instantly, no setup: real
+   markets, odds, and the on-chain activity ticker.
 2. Ask the co-pilot: *"bet 2 OKB YES on market 0 and hedge it"* → inspect the
    intent card (implied odds, est. payout) → PREPARE EXECUTION → see the
    two-leg ticket with the non-custodial risk disclosure.
 3. Ask: *"create a market about &lt;any headline&gt;"* → OPEN DEPLOY TICKET →
    the AI-drafted market is prefilled for permissionless deployment.
 4. On testnet with OKX Wallet (chain 1952, faucet linked in the footer):
-   place a real bet, watch the activity ticker, check MY POSITIONS, and — as
-   the venue owner — resolve a market and claim.
+   place a real bet, watch the activity ticker, check MY POSITIONS, and - as
+   the venue owner - resolve a market and claim.
 
 ## Architecture
 
@@ -101,13 +102,30 @@ User Wallet ── AI Intent Engine (Claude, schema-constrained)
 - Stack: Solidity 0.8.24 + Hardhat · Next.js 14 · wagmi v2/viem ·
   Claude structured outputs · OKX DEX aggregator API (server-side HMAC).
 
+## Roadmap (post-hackathon)
+
+- **Mainnet + verification**: X Layer chain 196 launch, OKLink-verified source.
+- **Mass-market onboarding**: social-login embedded wallets (Privy-class)
+  with sponsored gas - Polymarket-style Google sign-in without breaking
+  self-custody - plus WalletConnect for mobile.
+- **Scalar PULSE pools**: bucketed "predict the number" range markets as a
+  multi-outcome parimutuel evolution of the venue.
+- **Decentralized resolution**: oracle-fed adapters replacing owner-key
+  settlement.
+- **Distribution**: public Telegram bot, OKX Wallet dApp listing, OKX
+  agent-economy registration, Farcaster frames.
+- **Decentralized AI stack**: cross-device 0G Storage memory with
+  wallet-derived keys; agent reasoning receipts published to 0G Storage.
+
+Full detail: [README.md](README.md#roadmap).
+
 ## Requirements checklist
 
 - [x] AI incorporated into product design (intent engine, market drafting, MM agent)
-- [x] Deployed on X Layer Testnet (chain 1952) — `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`, 6 markets live
-- [ ] Launched on X Layer Mainnet (chain 196) — _scheduled before deadline_
+- [x] Deployed on X Layer Testnet (chain 1952) - `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`, 6 markets live
+- [ ] Launched on X Layer Mainnet (chain 196) - _scheduled before deadline_
 - [x] Dedicated X account (@AetheriaEx)
-- [ ] Submission post mentioning @XLayerOfficial — _draft below, posts at launch_
+- [ ] Submission post mentioning @XLayerOfficial - _draft below, posts at launch_
 - [ ] Google Form submitted by Aug 21, 23:59 UTC
 
 ---
@@ -116,7 +134,7 @@ User Wallet ── AI Intent Engine (Claude, schema-constrained)
 
 > A market you can ask. A hedge you can click.
 >
-> Aetheria Exchange is live on @XLayerOfficial for AI Season — an AI
+> Aetheria Exchange is live on @XLayerOfficial for AI Season - an AI
 > co-pilot that turns plain English into outcome bets + correlated OKX DEX
 > hedges. One click. Self-custodied. The AI even drafts the markets.
 >
