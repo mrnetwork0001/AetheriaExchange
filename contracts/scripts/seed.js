@@ -30,7 +30,7 @@ async function main() {
   const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
   const address = config.chains?.[chainId]?.address;
   if (!address) {
-    throw new Error(`No deployment found for chain ${chainId} — run deploy first.`);
+    throw new Error(`No deployment found for chain ${chainId} - run deploy first.`);
   }
 
   const contract = await hre.ethers.getContractAt("OutcomeMarket", address);

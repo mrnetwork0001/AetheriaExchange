@@ -2,13 +2,16 @@
 //
 // A small autonomous bot that keeps outcome markets tradeable: it seeds
 // two-sided liquidity into empty markets and tops up whichever side is too
-// thin for a counterparty to get a fill. Every stake is a REAL parimutuel
-// position — when the market resolves, the bot's losing-side stake pays the
-// winners (minus its own winning-side share), so depth provision has a real,
+// thin for a counterparty to get a fill. Bootstrap seeding is AI-informed:
+// the bot asks the co-pilot's odds endpoint (/api/ai/odds) for a fair YES
+// probability and splits its seed accordingly, so fresh markets open near
+// fair odds instead of 50/50. Every stake is a REAL parimutuel position -
+// when the market resolves, the bot's losing-side stake pays the winners
+// (minus its own winning-side share), so depth provision has a real,
 // bounded cost. This is inventory risk, not wash activity.
 //
 // Scope note: the bot trades ONLY on the OutcomeMarket venue. It generates
-// zero OKX DEX volume by design — DEX volume must come from user-signed
+// zero OKX DEX volume by design - DEX volume must come from user-signed
 // hedges, which is what the Launch Grant's anti-wash rules require.
 //
 // Run:  MM_PRIVATE_KEY=0x... npx hardhat run scripts/market-maker.js --network xlayerTestnet
@@ -20,6 +23,9 @@
 //   MM_MIN_SIDE_OKB    minimum depth per side                 (default 0.1)
 //   MM_MAX_STAKE_OKB   cap for any single top-up tx           (default 0.15)
 //   MM_INTERVAL_SEC    base loop interval                     (default 60)
+//   AETHERIA_API_URL   frontend base URL for the odds endpoint
+//                      (default http://localhost:3003; neutral 50/50 seeding
+//                      when unreachable)
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
@@ -42,11 +48,32 @@ const MIN_SIDE = parseEther(process.env.MM_MIN_SIDE_OKB ?? "0.1");
 const MAX_STAKE = parseEther(process.env.MM_MAX_STAKE_OKB ?? "0.15");
 const GAS_RESERVE = parseEther("0.02");
 const INTERVAL_MS = Number(process.env.MM_INTERVAL_SEC ?? "60") * 1000;
-// Don't take positions in markets about to close — the bot can't exit.
+// Don't take positions in markets about to close - the bot can't exit.
 const CLOSE_BUFFER_SEC = 15 * 60;
+
+const API_URL = (process.env.AETHERIA_API_URL ?? "http://localhost:3003").replace(/\/+$/, "");
 
 const min = (...xs) => xs.reduce((a, b) => (a < b ? a : b));
 const fmt = (wei) => `${Number(formatEther(wei)).toFixed(4)} OKB`;
+
+// Ask the AI for a fair YES probability; null (→ neutral 50/50) when the
+// endpoint is unreachable or returns the offline prior.
+async function fairYesProb(title) {
+  try {
+    const res = await fetch(`${API_URL}/api/ai/odds`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    if (j.engine === "offline-fallback") return null;
+    const p = Number(j.yesProbability);
+    return Number.isFinite(p) ? Math.min(0.8, Math.max(0.2, p)) : null;
+  } catch {
+    return null;
+  }
+}
 
 function log(msg) {
   console.log(`[MM ${new Date().toISOString()}] ${msg}`);
@@ -57,7 +84,7 @@ let wake = null;
 process.on("SIGINT", () => {
   if (stopping) process.exit(130); // second Ctrl-C forces exit
   stopping = true;
-  log("SIGINT — finishing current pass then exiting (Ctrl-C again to force)");
+  log("SIGINT - finishing current pass then exiting (Ctrl-C again to force)");
   wake?.();
 });
 
@@ -69,14 +96,14 @@ function sleep(ms) {
   });
 }
 
-// Broadcast one stake, counting spend the moment the tx is sent — a wait()
+// Broadcast one stake, counting spend the moment the tx is sent - a wait()
 // timeout must never under-count the budget. Skips (rather than fails) when
 // the wallet can't cover amount + gas reserve.
 async function stakeIfAffordable(venue, wallet, state, marketId, isYes, amount) {
   const balance = await hre.ethers.provider.getBalance(wallet.address);
   if (balance < amount + GAS_RESERVE) {
     log(
-      `market #${marketId}: skip ${fmt(amount)} — balance ${fmt(balance)} under amount + gas reserve`
+      `market #${marketId}: skip ${fmt(amount)} - balance ${fmt(balance)} under amount + gas reserve`
     );
     return;
   }
@@ -111,7 +138,7 @@ async function main() {
 
     const now = Math.floor(Date.now() / 1000);
 
-    // One market's failure must never starve the rest of the book —
+    // One market's failure must never starve the rest of the book -
     // each market gets its own fault boundary.
     for (let id = 0; id < count && !stopping; id++) {
       if (state.spent >= BUDGET) break;
@@ -123,12 +150,24 @@ async function main() {
         const yes = BigInt(m.yesPool);
         const no = BigInt(m.noPool);
 
-        // Empty market → bootstrap both sides equally (only if the whole
-        // pair fits in the remaining budget).
+        // Empty market → bootstrap both sides, split by the AI's fair-odds
+        // estimate so the market opens near fair implied probability. The
+        // total is scaled so the SMALLER side still meets the depth floor -
+        // otherwise the next pass's flat top-up would erase the AI ratio and
+        // double the per-market spend. minShare >= 20% (p is clamped), so
+        // totalSeed is bounded by MIN_SIDE * 5.
         if (yes === 0n && no === 0n) {
-          if (BUDGET - state.spent < SEED * 2n) continue;
-          await stakeIfAffordable(venue, wallet, state, id, true, SEED);
-          await stakeIfAffordable(venue, wallet, state, id, false, SEED);
+          const p = (await fairYesProb(m.title)) ?? 0.5;
+          const pPct = BigInt(Math.round(p * 100));
+          const minSharePct = pPct < 50n ? pPct : 100n - pPct;
+          const floorSeed = (MIN_SIDE * 100n + minSharePct - 1n) / minSharePct;
+          const totalSeed = floorSeed > SEED * 2n ? floorSeed : SEED * 2n;
+          if (BUDGET - state.spent < totalSeed) continue;
+          const seedYes = (totalSeed * pPct) / 100n;
+          const seedNo = totalSeed - seedYes;
+          if (p !== 0.5) log(`market #${id}: AI fair odds ${(p * 100).toFixed(0)}% YES`);
+          await stakeIfAffordable(venue, wallet, state, id, true, seedYes);
+          await stakeIfAffordable(venue, wallet, state, id, false, seedNo);
           continue;
         }
 
@@ -147,13 +186,13 @@ async function main() {
         }
       } catch (err) {
         log(
-          `market #${id} pass failed: ${err.shortMessage ?? err.message} — continuing`
+          `market #${id} pass failed: ${err.shortMessage ?? err.message} - continuing`
         );
       }
     }
 
     if (state.spent >= BUDGET) {
-      log(`budget exhausted (${fmt(state.spent)}) — agent going idle`);
+      log(`budget exhausted (${fmt(state.spent)}) - agent going idle`);
       break;
     }
     if (stopping) break;

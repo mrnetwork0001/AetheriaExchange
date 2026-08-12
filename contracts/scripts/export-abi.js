@@ -1,5 +1,5 @@
 // Syncs the compiled OutcomeMarket ABI into the frontend config without
-// requiring a deployment — lets the frontend build against the real ABI
+// requiring a deployment - lets the frontend build against the real ABI
 // while contract addresses are still empty (demo mode).
 const fs = require("fs");
 const path = require("path");

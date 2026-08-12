@@ -10,7 +10,11 @@
     "deploy:mainnet": "hardhat run scripts/deploy.js --network xlayerMainnet",
     "seed:testnet": "hardhat run scripts/seed.js --network xlayerTestnet",
     "mm:testnet": "hardhat run scripts/market-maker.js --network xlayerTestnet",
-    "mm:mainnet": "hardhat run scripts/market-maker.js --network xlayerMainnet"
+    "mm:mainnet": "hardhat run scripts/market-maker.js --network xlayerMainnet",
+    "draft:testnet": "hardhat run scripts/pulse-drafter.js --network xlayerTestnet",
+    "draft:mainnet": "hardhat run scripts/pulse-drafter.js --network xlayerMainnet",
+    "resolve:testnet": "hardhat run scripts/resolver.js --network xlayerTestnet",
+    "resolve:mainnet": "hardhat run scripts/resolver.js --network xlayerMainnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
