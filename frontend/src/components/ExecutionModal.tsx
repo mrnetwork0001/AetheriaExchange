@@ -15,7 +15,7 @@ import { explorerTxUrl, SUPPORTED_CHAINS } from "@/lib/chains";
 import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
 import type { AppIntent } from "@/lib/intent";
 import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
-import { prepareSwap } from "@/services/dexRouter";
+import { okxInterfaceUrl, prepareSwap } from "@/services/dexRouter";
 
 function payoutPreview(
   amount: string,
@@ -43,7 +43,10 @@ type LegState =
   | { phase: "pending"; note?: string }
   | { phase: "confirmed"; hash: string }
   | { phase: "error"; reason: string }
-  | { phase: "skipped"; reason: string };
+  | { phase: "skipped"; reason: string }
+  // Hedge routed to the OKX DEX interface (the Launch-Grant-eligible path);
+  // execution completes there, outside this modal.
+  | { phase: "external"; url: string };
 
 function LegStatus({ state, chainId }: { state: LegState; chainId: number }) {
   switch (state.phase) {
@@ -70,6 +73,17 @@ function LegStatus({ state, chainId }: { state: LegState; chainId: number }) {
       return <span className="leg-status error">{state.reason}</span>;
     case "skipped":
       return <span className="leg-status skipped">{state.reason}</span>;
+    case "external":
+      return (
+        <a
+          className="leg-status confirmed"
+          href={state.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          ON OKX DEX ↗
+        </a>
+      );
   }
 }
 
@@ -114,7 +128,19 @@ export function ExecutionModal({
     (outcomeState.phase === "confirmed" ||
       outcomeState.phase === "skipped" ||
       !outcomeTrade) &&
-    (dexState.phase === "confirmed" || dexState.phase === "skipped" || !dexTrade);
+    (dexState.phase === "confirmed" ||
+      dexState.phase === "skipped" ||
+      dexState.phase === "external" ||
+      !dexTrade);
+
+  // Grant-eligible path: open the OKX DEX interface with the hedge prefilled
+  // and mark the leg as externally routed so in-app execution won't double it.
+  function routeViaInterface() {
+    if (!dexTrade || running) return;
+    const url = okxInterfaceUrl(dexTrade, chainId);
+    window.open(url, "_blank", "noopener,noreferrer");
+    setDexState({ phase: "external", url });
+  }
 
   async function execute() {
     if (!isConnected || !address) {
@@ -180,8 +206,13 @@ export function ExecutionModal({
       }
 
       // Leg 2 — correlated swap routed through the OKX DEX aggregator.
-      // Only runs when the position it hedges actually exists.
-      if (dexTrade && dexState.phase !== "confirmed") {
+      // Only runs when the position it hedges actually exists, and never
+      // when the hedge was already routed to the OKX interface.
+      if (
+        dexTrade &&
+        dexState.phase !== "confirmed" &&
+        dexState.phase !== "external"
+      ) {
         if (outcomeTrade && !outcomePlaced) {
           setDexState({ phase: "skipped", reason: "PRIMARY LEG SKIPPED" });
           return;
@@ -327,6 +358,16 @@ export function ExecutionModal({
                   {dexTrade.reasoning}
                 </span>
               </div>
+              {dexState.phase !== "confirmed" &&
+                dexState.phase !== "external" && (
+                  <button
+                    className="okx-route-btn"
+                    disabled={running}
+                    onClick={routeViaInterface}
+                  >
+                    HEDGE ON OKX DEX ↗ · GRANT-ELIGIBLE VOLUME
+                  </button>
+                )}
             </div>
           )}
 
@@ -334,6 +375,8 @@ export function ExecutionModal({
             NON-CUSTODIAL EXECUTION — EACH LEG IS A SEPARATE TRANSACTION SIGNED
             IN YOUR WALLET. PREDICTION MARKETS AND SPOT TRADES CARRY RISK OF
             TOTAL LOSS. THIS IS NOT FINANCIAL ADVICE.
+            {dexTrade &&
+              " HEDGES EXECUTED ON THE OKX DEX INTERFACE COUNT TOWARD LAUNCH-GRANT VOLUME; IN-APP API ROUTING DOES NOT."}
           </p>
 
           {done ? (

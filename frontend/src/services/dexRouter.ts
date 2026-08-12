@@ -1,6 +1,27 @@
 import { parseUnits } from "viem";
-import { resolveToken } from "@/lib/tokens";
+import { NATIVE_TOKEN, resolveToken } from "@/lib/tokens";
 import type { DexTrade } from "@/lib/intent";
+
+// Deep link into the OKX DEX *interface* with the hedge prefilled. Per the
+// hackathon FAQ, only interface-executed swaps count toward Launch Grant
+// volume (API-executed swaps are excluded) — so this is the grant-eligible
+// path. The interface lists mainnet chains only; testnet sessions link to
+// the mainnet pair. Prefill params are best-effort: if OKX changes the URL
+// scheme the link still lands on the swap page.
+export function okxInterfaceUrl(trade: DexTrade, chainId: number): string {
+  const interfaceChain = chainId === 1952 ? 196 : chainId;
+  const tokenIn = resolveToken(trade.tokenIn);
+  const tokenOut = resolveToken(trade.tokenOut);
+  const currency = (t: typeof tokenIn, symbol: string) =>
+    !t || t.address === NATIVE_TOKEN ? symbol.toUpperCase() : t.address;
+  const params = new URLSearchParams({
+    inputChain: String(interfaceChain),
+    outputChain: String(interfaceChain),
+    inputCurrency: currency(tokenIn, trade.tokenIn),
+    outputCurrency: currency(tokenOut, trade.tokenOut),
+  });
+  return `https://web3.okx.com/dex-swap?${params.toString()}`;
+}
 
 export interface PreparedSwap {
   tx: {

@@ -1010,6 +1010,30 @@ button {
   border-color: rgba(63, 224, 255, 0.5);
 }
 
+/* ── OKX interface routing ── */
+
+.okx-route-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--violet);
+  background: transparent;
+  border: 1px solid rgba(160, 107, 255, 0.5);
+  padding: 10px 0;
+  margin-top: 4px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.okx-route-btn:hover:not(:disabled) {
+  background: var(--violet-dim);
+  box-shadow: 0 0 16px rgba(160, 107, 255, 0.25);
+}
+
+.okx-route-btn:disabled {
+  color: var(--faint);
+  border-color: var(--line);
+}
+
 /* ── intent quote ── */
 
 .intent-quote {

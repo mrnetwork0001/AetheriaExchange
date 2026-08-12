@@ -45,8 +45,14 @@ The AI is structural, not decorative — it is the trade-construction layer:
 
 Outcome bets create conviction; conviction wants a hedge. Every position the
 co-pilot builds can carry a correlated OKX DEX leg (e.g. 5 OKB YES on an
-OKB-linked event → 10 USDT→OKB spot hedge), signed by the user, routed
-through the OKX DEX interface, attributable on-chain.
+OKB-linked event → 10 USDT→OKB spot hedge).
+
+Per the hackathon FAQ, only swaps executed **through the OKX DEX interface**
+count toward Launch Grant volume (API-executed swaps are excluded). The
+execution ticket therefore routes hedges to the OKX DEX interface via a
+prefilled deep link as the grant-eligible primary path; in-app aggregator-API
+routing remains as a labeled convenience fallback and a demonstration of
+technical depth.
 
 **Anti-wash stance, explicitly**: the market-maker agent trades only on the
 outcome venue and generates zero DEX volume by design. All OKX DEX volume is
