@@ -23,6 +23,7 @@ async function main() {
   const contract = await factory.deploy(deployer.address);
   await contract.waitForDeployment();
   const address = await contract.getAddress();
+  const receipt = await contract.deploymentTransaction()?.wait();
 
   console.log(`OutcomeMarket deployed at: ${address}`);
 
@@ -36,6 +37,7 @@ async function main() {
   config.chains = config.chains || {};
   config.chains[String(chainId)] = {
     address,
+    deploymentBlock: receipt?.blockNumber ?? null,
     deployedAt: new Date().toISOString(),
     deployer: deployer.address,
   };
