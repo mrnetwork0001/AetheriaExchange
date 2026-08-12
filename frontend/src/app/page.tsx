@@ -96,7 +96,7 @@ export default function Home() {
 
       <ActivityTicker items={activity} onSelect={openDetail} />
 
-      <div className="main">
+      <div className="main" id="markets">
         <div>
           <div className="markets-head">
             <div className="tab-bar">

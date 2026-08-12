@@ -39,6 +39,10 @@ body {
   min-height: 100vh;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-image:
     linear-gradient(var(--grid) 1px, transparent 1px),
@@ -1318,38 +1322,114 @@ button {
 /* ── footer ── */
 
 .site-footer {
-  margin-top: 40px;
-}
-
-.footer-links {
-  display: flex;
-  justify-content: center;
-  gap: 34px;
-  flex-wrap: wrap;
-  padding: 22px 0 4px;
+  margin-top: 48px;
   border-top: 1px solid var(--line-soft);
 }
 
-.footer-link {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  color: var(--dim);
-  background: transparent;
-  border: none;
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.5fr) repeat(3, minmax(150px, 1fr));
+  gap: 48px;
+  padding: 48px 0 40px;
 }
 
-a.footer-link:hover {
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.footer-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--dim);
+  max-width: 360px;
+}
+
+.footer-social {
+  display: flex;
+  gap: 16px;
+}
+
+.footer-social a {
+  display: inline-flex;
+}
+
+.footer-social svg {
+  width: 17px;
+  height: 17px;
+  fill: var(--dim);
+  transition: fill 0.15s;
+}
+
+.footer-social a:hover svg {
+  fill: var(--text);
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.footer-col .label {
+  font-size: 10px;
+}
+
+.footer-col nav {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.footer-col nav a,
+.footer-dead {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  transition: color 0.15s;
+  width: fit-content;
+}
+
+.footer-col nav a:hover {
   color: var(--cyan);
 }
 
-.footer-venue {
+.footer-dead {
   color: var(--faint);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--line-soft);
+  padding-bottom: 22px;
 }
 
 .stat-footer {
   border-top: none;
-  padding-top: 12px;
+  padding: 20px 0 0;
+}
+
+.footer-copy {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+  margin-top: 12px;
+}
+
+@media (max-width: 1024px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 1024px) {

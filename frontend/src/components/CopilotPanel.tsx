@@ -126,7 +126,7 @@ export function CopilotPanel({
   }
 
   return (
-    <aside className="copilot">
+    <aside className="copilot" id="copilot">
       <div className="copilot-head">
         <span className="label">AI CO-PILOT</span>
         <span className="copilot-dot" />

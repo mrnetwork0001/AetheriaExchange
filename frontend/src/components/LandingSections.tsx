@@ -25,7 +25,7 @@ export function LandingSections() {
   return (
     <>
       {/* ── how it works ── */}
-      <section className="land-section">
+      <section className="land-section" id="how-it-works">
         <span className="label">HOW IT WORKS</span>
         <div className="steps-grid">
           {STEPS.map((s) => (
@@ -42,7 +42,7 @@ export function LandingSections() {
       </section>
 
       {/* ── volume engine ── */}
-      <section className="land-section">
+      <section className="land-section" id="volume-engine">
         <span className="label">VOLUME ENGINE</span>
         <div className="volume-grid">
           <div className="volume-copy">
@@ -86,7 +86,7 @@ export function LandingSections() {
       </section>
 
       {/* ── architecture ── */}
-      <section className="land-section">
+      <section className="land-section" id="architecture">
         <span className="label">ARCHITECTURE</span>
         <div className="arch-wrap">
           <svg
