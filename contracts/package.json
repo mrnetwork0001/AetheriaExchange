@@ -1,0 +1,18 @@
+{
+  "name": "aetheria-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "export-abi": "hardhat compile && node scripts/export-abi.js",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network xlayerTestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network xlayerMainnet",
+    "seed:testnet": "hardhat run scripts/seed.js --network xlayerTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.10"
+  }
+}
