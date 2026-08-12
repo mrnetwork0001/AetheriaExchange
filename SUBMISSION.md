@@ -10,7 +10,7 @@ click, fully self-custodied.
 | Live dApp | _(deployment URL — added at launch)_ |
 | GitHub | https://github.com/mrnetwork0001/AetheriaExchange |
 | X account | https://x.com/AetheriaEx |
-| Testnet venue (chain 1952) | _(address — added at deployment)_ |
+| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
 | Mainnet venue (chain 196) | _(address — added at launch)_ |
 
 ---
@@ -104,7 +104,7 @@ User Wallet ── AI Intent Engine (Claude, schema-constrained)
 ## Requirements checklist
 
 - [x] AI incorporated into product design (intent engine, market drafting, MM agent)
-- [ ] Deployed on X Layer Testnet (chain 1952) — _in progress_
+- [x] Deployed on X Layer Testnet (chain 1952) — `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`, 6 markets live
 - [ ] Launched on X Layer Mainnet (chain 196) — _scheduled before deadline_
 - [x] Dedicated X account (@AetheriaEx)
 - [ ] Submission post mentioning @XLayerOfficial — _draft below, posts at launch_
