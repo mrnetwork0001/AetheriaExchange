@@ -23,15 +23,24 @@ interface RawMarket {
   creator: string;
 }
 
-export function useMarkets(): { markets: Market[]; live: boolean } {
+export function useMarkets(): {
+  markets: Market[];
+  live: boolean;
+  loading: boolean;
+  refetch: () => void;
+} {
   const chainId = useChainId();
   const address = contractAddress(chainId);
 
-  const { data: count } = useReadContract({
+  const {
+    data: count,
+    isLoading: countLoading,
+    refetch: refetchCount,
+  } = useReadContract({
     abi,
     address: address ?? undefined,
     functionName: "marketCount",
-    query: { enabled: !!address },
+    query: { enabled: !!address, refetchInterval: 15_000 },
   });
 
   const marketCalls = useMemo(() => {
@@ -44,7 +53,7 @@ export function useMarkets(): { markets: Market[]; live: boolean } {
     }));
   }, [address, count]);
 
-  const { data: results } = useReadContracts({
+  const { data: results, refetch: refetchMarkets } = useReadContracts({
     contracts: marketCalls as any,
     query: { enabled: marketCalls.length > 0, refetchInterval: 15_000 },
   });
@@ -71,5 +80,16 @@ export function useMarkets(): { markets: Market[]; live: boolean } {
       .filter((m): m is Market => m !== null);
   }, [address, results]);
 
-  return { markets, live: !!address };
+  const loading =
+    !!address && (countLoading || (marketCalls.length > 0 && !results));
+
+  return {
+    markets,
+    live: !!address,
+    loading,
+    refetch: () => {
+      refetchCount();
+      refetchMarkets();
+    },
+  };
 }

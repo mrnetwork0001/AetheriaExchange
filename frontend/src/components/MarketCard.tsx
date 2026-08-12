@@ -28,10 +28,14 @@ function useNow(): number | null {
 
 export function MarketCard({
   market,
+  index,
   onTrade,
+  onOpen,
 }: {
   market: Market;
+  index: number;
   onTrade: (market: Market, isYes: boolean) => void;
+  onOpen: (market: Market) => void;
 }) {
   const now = useNow();
   const total = market.yesPool + market.noPool;
@@ -43,15 +47,26 @@ export function MarketCard({
   const poolOkb = Number(formatEther(total)).toFixed(2);
 
   return (
-    <article className="market-card">
+    <article
+      className="market-card"
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+    >
       <div className="market-meta">
         <span className="label">{market.category}</span>
         <span className="market-countdown" suppressHydrationWarning>
-          {now === null ? "T—" : countdown(market.endTime, now)}
+          {market.status === 1
+            ? `RESOLVED ${market.outcome ? "YES" : "NO"}`
+            : market.status === 2
+              ? "CANCELLED"
+              : now === null
+                ? "T—"
+                : countdown(market.endTime, now)}
         </span>
       </div>
 
-      <h3 className="market-title">{market.title}</h3>
+      <button className="market-title-btn" onClick={() => onOpen(market)}>
+        <h3 className="market-title">{market.title}</h3>
+      </button>
 
       <div>
         <div className="odds-bar">
