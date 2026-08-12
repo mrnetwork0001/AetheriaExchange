@@ -1,0 +1,108 @@
+# Aetheria Exchange — X Layer AI Season Hackathon Submission
+
+**Project**: Aetheria Exchange (@AetheriaEx)
+**One-liner**: An AI market co-pilot + outcome exchange on X Layer — natural
+language in, a signable outcome bet + correlated OKX DEX hedge out, in one
+click, fully self-custodied.
+
+| | |
+|---|---|
+| Live dApp | _(deployment URL — added at launch)_ |
+| GitHub | https://github.com/mrnetwork0001/AetheriaExchange |
+| X account | https://x.com/AetheriaEx |
+| Testnet venue (chain 1952) | _(address — added at deployment)_ |
+| Mainnet venue (chain 196) | _(address — added at launch)_ |
+
+---
+
+## What it is
+
+Aetheria pairs two engines:
+
+1. **A parimutuel outcome venue** (`OutcomeMarket.sol`) — permissionless
+   YES/NO markets settled in native OKB. Winners split the losing pool
+   pro-rata; a 2% fee on the losing pool funds the protocol. 8/8 tests
+   passing; refunds on cancellation and one-sided markets.
+2. **An AI co-pilot** — a serverless intent engine (Claude, JSON-schema-
+   constrained output) that turns natural language into executable structure:
+   `{ outcomeTrade, dexTrade, marketDraft, explanation }`. It quotes implied
+   odds and estimated payout before anything is signed.
+
+The AI is structural, not decorative — it is the trade-construction layer:
+
+- **It trades the markets**: "bet 2 OKB YES on the Fed market and hedge it"
+  becomes a two-leg execution ticket — the outcome bet on the venue plus a
+  correlated spot swap routed through the **OKX DEX aggregator** (with
+  automatic ERC-20 allowance handling).
+- **It creates the markets**: "create a market about the next ETH upgrade"
+  returns a MARKET_DRAFT — a precisely-worded, objectively-resolvable
+  question with a close time — prefilled into a permissionless deploy ticket.
+- **It makes the markets**: an autonomous market-maker agent
+  (`contracts/scripts/market-maker.js`) seeds two-sided liquidity and tops up
+  thin sides on a loop, taking real inventory risk under hard budget caps.
+
+## How it generates real OKX DEX volume (Launch Grant thesis)
+
+Outcome bets create conviction; conviction wants a hedge. Every position the
+co-pilot builds can carry a correlated OKX DEX leg (e.g. 5 OKB YES on an
+OKB-linked event → 10 USDT→OKB spot hedge), signed by the user, routed
+through the OKX DEX interface, attributable on-chain.
+
+**Anti-wash stance, explicitly**: the market-maker agent trades only on the
+outcome venue and generates zero DEX volume by design. All OKX DEX volume is
+user-signed, economically motivated flow — the only kind the grant rules
+count.
+
+## Judge test drive (3 minutes)
+
+1. Open the dApp — works instantly in labeled OFFLINE PREVIEW mode, no setup.
+2. Ask the co-pilot: *"bet 2 OKB YES on market 0 and hedge it"* → inspect the
+   intent card (implied odds, est. payout) → PREPARE EXECUTION → see the
+   two-leg ticket with the non-custodial risk disclosure.
+3. Ask: *"create a market about &lt;any headline&gt;"* → OPEN DEPLOY TICKET →
+   the AI-drafted market is prefilled for permissionless deployment.
+4. On testnet with OKX Wallet (chain 1952, faucet linked in the footer):
+   place a real bet, watch the activity ticker, check MY POSITIONS, and — as
+   the venue owner — resolve a market and claim.
+
+## Architecture
+
+```
+User Wallet ── AI Intent Engine (Claude, schema-constrained)
+                  │                    │
+          buyShares() │                │ swap()
+                  ▼                    ▼
+      OutcomeMarket venue        OKX DEX aggregator
+          (parimutuel)             (spot hedges)
+                  └──────── X Layer EVM ────────┘
+                        (196 mainnet / 1952 testnet)
+```
+
+- Non-custodial end to end: the server holds API credentials, never keys;
+  every transaction is signed in the user's wallet.
+- Stack: Solidity 0.8.24 + Hardhat · Next.js 14 · wagmi v2/viem ·
+  Claude structured outputs · OKX DEX aggregator API (server-side HMAC).
+
+## Requirements checklist
+
+- [x] AI incorporated into product design (intent engine, market drafting, MM agent)
+- [ ] Deployed on X Layer Testnet (chain 1952) — _in progress_
+- [ ] Launched on X Layer Mainnet (chain 196) — _scheduled before deadline_
+- [x] Dedicated X account (@AetheriaEx)
+- [ ] Submission post mentioning @XLayerOfficial — _draft below, posts at launch_
+- [ ] Google Form submitted by Aug 21, 23:59 UTC
+
+---
+
+## X announcement draft (post from @AetheriaEx at launch)
+
+> A market you can ask. A hedge you can click.
+>
+> Aetheria Exchange is live on @XLayerOfficial for AI Season — an AI
+> co-pilot that turns plain English into outcome bets + correlated OKX DEX
+> hedges. One click. Self-custodied. The AI even drafts the markets.
+>
+> Try it: _(dApp URL)_
+> Built on X Layer · #XLayerAISeason
+
+_(Attach: 30–60s screen recording of the ask → ticket → execute flow.)_
