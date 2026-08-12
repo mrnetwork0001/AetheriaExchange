@@ -14,7 +14,29 @@ import {
 import { explorerTxUrl, SUPPORTED_CHAINS } from "@/lib/chains";
 import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
 import type { AppIntent } from "@/lib/intent";
+import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
 import { prepareSwap } from "@/services/dexRouter";
+
+function payoutPreview(
+  amount: string,
+  isYes: boolean,
+  market: Market | null
+): { payout: string; mult: string } | null {
+  if (!market) return null;
+  try {
+    const stake = parseEther(amount);
+    if (stake === 0n) return null;
+    const payout = estimateNewStakePayout(
+      stake,
+      isYes,
+      market.yesPool,
+      market.noPool
+    );
+    return { payout: fmtOkb(payout), mult: multiplier(stake, payout) };
+  } catch {
+    return null;
+  }
+}
 
 type LegState =
   | { phase: "idle" }
@@ -264,6 +286,21 @@ export function ExecutionModal({
                   inputMode="decimal"
                 />
               </div>
+              {(() => {
+                const est = payoutPreview(amount, outcomeTrade.isYes, market);
+                return (
+                  <div className="ticket-row">
+                    <span className="k">
+                      Est. payout if {outcomeTrade.isYes ? "YES" : "NO"}
+                    </span>
+                    <span
+                      className={`v ${outcomeTrade.isYes ? "yes" : "no"}`}
+                    >
+                      {est ? `${est.payout} OKB · ${est.mult}` : "—"}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           )}
 

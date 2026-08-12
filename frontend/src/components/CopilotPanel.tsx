@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { useAccount } from "wagmi";
 import type { Market } from "@/lib/contract";
 import type { AppIntent } from "@/lib/intent";
+import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
 
 interface ChatMessage {
   role: "user" | "copilot";
@@ -14,8 +15,59 @@ interface ChatMessage {
 
 const WELCOME: ChatMessage = {
   role: "copilot",
-  text: "Co-pilot online. Ask about a market, or tell me a position — e.g. “bet 5 OKB YES on market 0 and hedge it”. I turn intent into a 1-click trade ticket.",
+  text: "Co-pilot online. Ask about a market, or tell me a position — I turn intent into a 1-click trade ticket with a correlated OKX DEX hedge.",
 };
+
+const SUGGESTED_PROMPTS = [
+  "Bet 2 OKB YES on market 0 and hedge it",
+  "Which market has the best risk/reward?",
+  "Bet 1 OKB NO on the Fed market",
+  "How would I hedge BTC exposure with USDT?",
+];
+
+// Progressive text reveal — runs once per mounted message.
+function Typewriter({ text }: { text: string }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!text) return;
+    const step = Math.max(2, Math.round(text.length / 45));
+    const timer = setInterval(() => {
+      setN((prev) => {
+        const next = prev + step;
+        if (next >= text.length) clearInterval(timer);
+        return Math.min(next, text.length);
+      });
+    }, 18);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <>{text.slice(0, n)}</>;
+}
+
+function outcomeQuote(intent: AppIntent, markets: Market[]): string | null {
+  const trade = intent.outcomeTrade;
+  if (!trade) return null;
+  const market = markets.find((m) => m.id === trade.marketId);
+  if (!market) return null;
+  try {
+    const stake = parseEther(trade.amount);
+    if (stake === 0n) return null;
+    const payout = estimateNewStakePayout(
+      stake,
+      trade.isYes,
+      market.yesPool,
+      market.noPool
+    );
+    const total = market.yesPool + market.noPool;
+    const pct =
+      total === 0n
+        ? 50
+        : Number(((trade.isYes ? market.yesPool : market.noPool) * 100n) / total);
+    return `${pct}% IMPLIED · RETURNS ~${fmtOkb(payout)} OKB (${multiplier(stake, payout)}) IF ${trade.isYes ? "YES" : "NO"}`;
+  } catch {
+    return null;
+  }
+}
 
 export function CopilotPanel({
   markets,
@@ -34,8 +86,8 @@ export function CopilotPanel({
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
   }, [messages, busy]);
 
-  async function send() {
-    const prompt = input.trim();
+  async function send(text?: string) {
+    const prompt = (text ?? input).trim();
     if (!prompt || busy) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", text: prompt }]);
@@ -81,50 +133,66 @@ export function CopilotPanel({
       </div>
 
       <div className="copilot-feed" ref={feedRef}>
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`msg ${msg.role === "user" ? "msg-user" : "msg-copilot"}`}
-          >
-            {msg.role === "copilot" && (
-              <span className="label who" style={{ fontSize: 9 }}>
-                CO-PILOT{msg.intent?.engine === "offline-fallback" ? " · OFFLINE" : ""}
-              </span>
-            )}
-            {msg.text}
-
-            {msg.intent &&
-              (msg.intent.outcomeTrade || msg.intent.dexTrade) && (
-                <div className="intent-card">
-                  <div className="label" style={{ fontSize: 9 }}>
-                    {msg.intent.intentType.replace("_", " ")}
-                  </div>
-                  <div className="summary">{msg.intent.summary}</div>
-                  {msg.intent.outcomeTrade && (
-                    <div className="intent-leg">
-                      LEG 1 · OUTCOME — {msg.intent.outcomeTrade.amount} OKB{" "}
-                      {msg.intent.outcomeTrade.isYes ? "YES" : "NO"} on market #
-                      {msg.intent.outcomeTrade.marketId}
-                    </div>
-                  )}
-                  {msg.intent.dexTrade && (
-                    <div className="intent-leg">
-                      LEG {msg.intent.outcomeTrade ? 2 : 1} · OKX DEX —{" "}
-                      {msg.intent.dexTrade.amount} {msg.intent.dexTrade.tokenIn}{" "}
-                      → {msg.intent.dexTrade.tokenOut}
-                    </div>
-                  )}
-                  <button
-                    className="intent-execute"
-                    onClick={() => onExecute(msg.intent!)}
-                  >
-                    PREPARE EXECUTION
-                  </button>
-                </div>
+        {messages.map((msg, i) => {
+          const quote = msg.intent ? outcomeQuote(msg.intent, markets) : null;
+          return (
+            <div
+              key={i}
+              className={`msg ${msg.role === "user" ? "msg-user" : "msg-copilot"}`}
+            >
+              {msg.role === "copilot" && (
+                <span className="label who" style={{ fontSize: 9 }}>
+                  CO-PILOT
+                  {msg.intent?.engine === "offline-fallback" ? " · OFFLINE" : ""}
+                </span>
               )}
-          </div>
-        ))}
+              {msg.role === "copilot" ? <Typewriter text={msg.text} /> : msg.text}
+
+              {msg.intent &&
+                (msg.intent.outcomeTrade || msg.intent.dexTrade) && (
+                  <div className="intent-card">
+                    <div className="label" style={{ fontSize: 9 }}>
+                      {msg.intent.intentType.replace("_", " ")}
+                    </div>
+                    <div className="summary">{msg.intent.summary}</div>
+                    {msg.intent.outcomeTrade && (
+                      <div className="intent-leg">
+                        LEG 1 · OUTCOME — {msg.intent.outcomeTrade.amount} OKB{" "}
+                        {msg.intent.outcomeTrade.isYes ? "YES" : "NO"} on market
+                        #{msg.intent.outcomeTrade.marketId}
+                        {quote && <div className="intent-quote">{quote}</div>}
+                      </div>
+                    )}
+                    {msg.intent.dexTrade && (
+                      <div className="intent-leg">
+                        LEG {msg.intent.outcomeTrade ? 2 : 1} · OKX DEX —{" "}
+                        {msg.intent.dexTrade.amount} {msg.intent.dexTrade.tokenIn}{" "}
+                        → {msg.intent.dexTrade.tokenOut}
+                      </div>
+                    )}
+                    <button
+                      className="intent-execute"
+                      onClick={() => onExecute(msg.intent!)}
+                    >
+                      PREPARE EXECUTION
+                    </button>
+                  </div>
+                )}
+            </div>
+          );
+        })}
+
         {busy && <div className="thinking">ANALYZING MARKET INTENT…</div>}
+
+        {!busy && messages.length <= 2 && (
+          <div className="chip-row prompt-chips">
+            {SUGGESTED_PROMPTS.map((p) => (
+              <button key={p} className="chip" onClick={() => send(p)}>
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="copilot-input">
@@ -135,7 +203,7 @@ export function CopilotPanel({
           onKeyDown={(e) => e.key === "Enter" && send()}
           disabled={busy}
         />
-        <button onClick={send} disabled={busy || !input.trim()}>
+        <button onClick={() => send()} disabled={busy || !input.trim()}>
           SEND
         </button>
       </div>
