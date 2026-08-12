@@ -48,7 +48,8 @@ export function Header() {
           </button>
         ) : (
           <span className="chain-badge">
-            {chain ? `${chain.name.toUpperCase()} · CHAIN ${chain.id}` : "CHAIN -"}
+            <span className="chain-dot" />
+            {chain ? chain.name.toUpperCase() : "NO NETWORK"}
           </span>
         )}
 

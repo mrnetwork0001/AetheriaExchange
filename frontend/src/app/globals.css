@@ -166,6 +166,18 @@ button {
   border: 1px solid var(--line);
   padding: 8px 14px;
   background: var(--panel);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.chain-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(85, 230, 165, 0.8);
+  animation: pulse 2.2s ease-in-out infinite;
 }
 
 .chain-badge.wrong {
