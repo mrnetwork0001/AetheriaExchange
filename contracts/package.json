@@ -8,7 +8,9 @@
     "export-abi": "hardhat compile && node scripts/export-abi.js",
     "deploy:testnet": "hardhat run scripts/deploy.js --network xlayerTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network xlayerMainnet",
-    "seed:testnet": "hardhat run scripts/seed.js --network xlayerTestnet"
+    "seed:testnet": "hardhat run scripts/seed.js --network xlayerTestnet",
+    "mm:testnet": "hardhat run scripts/market-maker.js --network xlayerTestnet",
+    "mm:mainnet": "hardhat run scripts/market-maker.js --network xlayerMainnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
