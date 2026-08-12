@@ -28,18 +28,30 @@ Aetheria pairs two engines:
    `{ outcomeTrade, dexTrade, marketDraft, explanation }`. It quotes implied
    odds and estimated payout before anything is signed.
 
-The AI is structural, not decorative — it is the trade-construction layer:
+The AI is structural, not decorative. Four autonomous/AI components cover the
+whole market lifecycle - the AI **trades, creates, makes, and settles** the
+markets:
 
-- **It trades the markets**: "bet 2 OKB YES on the Fed market and hedge it"
-  becomes a two-leg execution ticket — the outcome bet on the venue plus a
-  correlated spot swap routed through the **OKX DEX aggregator** (with
-  automatic ERC-20 allowance handling).
-- **It creates the markets**: "create a market about the next ETH upgrade"
-  returns a MARKET_DRAFT — a precisely-worded, objectively-resolvable
-  question with a close time — prefilled into a permissionless deploy ticket.
-- **It makes the markets**: an autonomous market-maker agent
-  (`contracts/scripts/market-maker.js`) seeds two-sided liquidity and tops up
-  thin sides on a loop, taking real inventory risk under hard budget caps.
+- **Co-Pilot (trades)**: "bet 2 OKB YES on the Fed market and hedge it"
+  becomes a two-leg execution ticket - the outcome bet on the venue plus a
+  correlated OKX DEX hedge - and it drafts new markets on request.
+- **Pulse Drafter agent (creates)**: `contracts/scripts/pulse-drafter.js`
+  asks the intent engine to draft the day's machine-resolvable PULSE markets
+  (X Layer metrics: active wallets, OKB volume) and deploys them onchain via
+  the permissionless `createMarket` - on a cron, no human in the loop.
+- **Market-Maker agent (makes)**: `contracts/scripts/market-maker.js` seeds
+  two-sided liquidity and tops up thin sides under hard budget caps - and its
+  bootstrap is AI-informed: it queries `/api/ai/odds` for a fair YES
+  probability so fresh markets open near fair implied odds.
+- **Resolver agent (settles)**: `contracts/scripts/resolver.js` parses the
+  drafter's machine-resolvable questions, fetches the metric from public
+  data, and settles ended PULSE markets onchain - flagging anything it can't
+  resolve mechanically for manual review rather than guessing.
+
+**AI infrastructure**: the intent and odds engines run on a provider
+abstraction - Anthropic (schema-guaranteed structured outputs) or
+**0G Compute** (decentralized inference via its OpenAI-compatible endpoint),
+selected per environment. Decentralized AI serving an X Layer-native venue.
 
 ## How it generates real OKX DEX volume (Launch Grant thesis)
 
