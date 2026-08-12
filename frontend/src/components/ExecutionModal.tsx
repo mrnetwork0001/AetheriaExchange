@@ -154,7 +154,7 @@ export function ExecutionModal({
 
     try {
       // The wallet must actually be on the target X Layer chain before any
-      // value-bearing transaction leaves it — useChainId() only tracks
+      // value-bearing transaction leaves it - useChainId() only tracks
       // configured chains, so check the wallet's own chainId here.
       if (walletChainId !== chainId) {
         try {
@@ -170,7 +170,7 @@ export function ExecutionModal({
       // confirmed on a previous attempt). The hedge must never run without it.
       let outcomePlaced = !outcomeTrade || outcomeState.phase === "confirmed";
 
-      // Leg 1 — outcome bet on the OutcomeMarket venue (native OKB).
+      // Leg 1 - outcome bet on the OutcomeMarket venue (native OKB).
       // Skipped when already confirmed so a retry never double-spends the stake.
       if (outcomeTrade && outcomeState.phase !== "confirmed") {
         if (!venueAddress) {
@@ -205,7 +205,7 @@ export function ExecutionModal({
         }
       }
 
-      // Leg 2 — correlated swap routed through the OKX DEX aggregator.
+      // Leg 2 - correlated swap routed through the OKX DEX aggregator.
       // Only runs when the position it hedges actually exists, and never
       // when the hedge was already routed to the OKX interface.
       if (
@@ -327,7 +327,7 @@ export function ExecutionModal({
                     <span
                       className={`v ${outcomeTrade.isYes ? "yes" : "no"}`}
                     >
-                      {est ? `${est.payout} OKB · ${est.mult}` : "—"}
+                      {est ? `${est.payout} OKB · ${est.mult}` : "-"}
                     </span>
                   </div>
                 );
@@ -372,7 +372,7 @@ export function ExecutionModal({
           )}
 
           <p className="modal-note">
-            NON-CUSTODIAL EXECUTION — EACH LEG IS A SEPARATE TRANSACTION SIGNED
+            NON-CUSTODIAL EXECUTION - EACH LEG IS A SEPARATE TRANSACTION SIGNED
             IN YOUR WALLET. PREDICTION MARKETS AND SPOT TRADES CARRY RISK OF
             TOTAL LOSS. THIS IS NOT FINANCIAL ADVICE.
             {dexTrade &&

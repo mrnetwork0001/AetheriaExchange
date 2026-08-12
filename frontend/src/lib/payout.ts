@@ -39,6 +39,6 @@ export function fmtOkb(wei: bigint, dp = 2): string {
 }
 
 export function multiplier(stake: bigint, payout: bigint): string {
-  if (stake === 0n) return "—";
+  if (stake === 0n) return "-";
   return `${(Number(payout) / Number(stake)).toFixed(2)}x`;
 }

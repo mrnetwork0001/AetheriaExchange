@@ -69,7 +69,7 @@ export default function Home() {
     () => ["ALL", ...Array.from(new Set(markets.map((m) => m.category)))],
     [markets]
   );
-  // A previously-selected category can vanish (markets refetched) — fall
+  // A previously-selected category can vanish (markets refetched) - fall
   // back to ALL rather than stranding the user on an empty list.
   const effectiveCategory = categories.includes(category) ? category : "ALL";
   const visibleMarkets =
@@ -176,7 +176,7 @@ export default function Home() {
                     ))}
                 {!loading && visibleMarkets.length === 0 && (
                   <p className="empty-note">
-                    NO MARKETS IN THIS CATEGORY — DEPLOY ONE.
+                    NO MARKETS IN THIS CATEGORY - DEPLOY ONE.
                   </p>
                 )}
               </div>

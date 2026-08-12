@@ -59,7 +59,7 @@ export function MarketCard({
             : market.status === 2
               ? "CANCELLED"
               : now === null
-                ? "T—"
+                ? "T-"
                 : countdown(market.endTime, now)}
         </span>
       </div>

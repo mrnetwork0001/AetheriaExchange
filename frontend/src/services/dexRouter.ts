@@ -4,7 +4,7 @@ import type { DexTrade } from "@/lib/intent";
 
 // Deep link into the OKX DEX *interface* with the hedge prefilled. Per the
 // hackathon FAQ, only interface-executed swaps count toward Launch Grant
-// volume (API-executed swaps are excluded) — so this is the grant-eligible
+// volume (API-executed swaps are excluded) - so this is the grant-eligible
 // path. The interface lists mainnet chains only; testnet sessions link to
 // the mainnet pair. Prefill params are best-effort: if OKX changes the URL
 // scheme the link still lands on the swap page.

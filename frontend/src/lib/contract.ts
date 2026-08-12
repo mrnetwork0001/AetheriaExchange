@@ -70,7 +70,7 @@ export const DEMO_MARKETS: Market[] = [
     noPool: 2_600_000_000_000_000_000n,
     live: false,
   },
-  // PULSE: short-dated markets on X Layer's own metrics — the chain
+  // PULSE: short-dated markets on X Layer's own metrics - the chain
   // speculating on itself, resolved daily from public onchain data.
   {
     id: 4,

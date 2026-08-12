@@ -4,7 +4,7 @@ const STEPS = [
   {
     n: "01",
     title: "ASK",
-    body: "Tell the co-pilot your view in plain language. A schema-constrained AI parses it into a structured intent — market, side, size, and a correlated hedge.",
+    body: "Tell the co-pilot your view in plain language. A schema-constrained AI parses it into a structured intent - market, side, size, and a correlated hedge.",
     detail: "NATURAL LANGUAGE → STRUCTURED INTENT",
   },
   {
@@ -54,13 +54,13 @@ export function LandingSections() {
             <p>
               Prediction markets create conviction; conviction wants a hedge.
               When a user takes a position, the co-pilot proposes a correlated
-              spot trade routed through the OKX DEX aggregator on X Layer — so
+              spot trade routed through the OKX DEX aggregator on X Layer - so
               a small outcome stake converts into real, attributable DEX
               volume.
             </p>
             <p className="volume-stance">
               NO WASH LOOPS. NO SYNTHETIC FLOW. EVERY SWAP IS A USER-SIGNED,
-              ECONOMICALLY MOTIVATED TRADE — THE ONLY KIND THAT COUNTS.
+              ECONOMICALLY MOTIVATED TRADE - THE ONLY KIND THAT COUNTS.
             </p>
           </div>
           <div className="volume-term">

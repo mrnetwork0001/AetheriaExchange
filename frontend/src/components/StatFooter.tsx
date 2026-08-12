@@ -55,7 +55,7 @@ export function StatFooter() {
           text: "Venue Contract",
           href: `https://www.oklink.com/xlayer-test/address/${venue}`,
         }
-      : { text: "Venue Contract — deploying", href: null },
+      : { text: "Venue Contract - deploying", href: null },
   ];
 
   return (
@@ -74,7 +74,7 @@ export function StatFooter() {
           <p className="footer-desc">
             Event-driven outcome markets with an AI trading co-pilot on X
             Layer. Your market view parsed against live odds, paired with a
-            correlated OKX DEX hedge — returned as a signable,
+            correlated OKX DEX hedge - returned as a signable,
             self-custodied ticket.
           </p>
           <div className="footer-social">
@@ -145,7 +145,7 @@ export function StatFooter() {
               <span className="divider">|</span>
             </span>
           ))}
-          <span className="stat">CHAIN {chainId ?? "—"}</span>
+          <span className="stat">CHAIN {chainId ?? "-"}</span>
         </div>
         <p className="footer-copy">
           © 2026 AETHERIA EXCHANGE · BUILT FOR THE X LAYER AI SEASON HACKATHON

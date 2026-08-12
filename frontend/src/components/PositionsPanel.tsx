@@ -9,9 +9,9 @@ import type { Position } from "@/hooks/usePositions";
 
 const STATE_LABEL: Record<Position["state"], { text: string; cls: string }> = {
   OPEN: { text: "OPEN", cls: "open" },
-  WON: { text: "WON — CLAIMABLE", cls: "won" },
+  WON: { text: "WON - CLAIMABLE", cls: "won" },
   LOST: { text: "LOST", cls: "lost" },
-  REFUND: { text: "REFUND — CLAIMABLE", cls: "won" },
+  REFUND: { text: "REFUND - CLAIMABLE", cls: "won" },
   CLAIMED: { text: "CLAIMED", cls: "claimed" },
 };
 
@@ -39,7 +39,7 @@ export function PositionsPanel({
   const venue = contractAddress(chainId);
   const [claims, setClaims] = useState<Record<number, ClaimState>>({});
 
-  // Claim statuses belong to the connected account — reset on switch so a
+  // Claim statuses belong to the connected account - reset on switch so a
   // prior account's "CLAIMED" doesn't mask the new account's CLAIM button.
   useEffect(() => {
     setClaims({});
@@ -78,7 +78,7 @@ export function PositionsPanel({
   if (positions.length === 0) {
     return (
       <p className="empty-note">
-        NO OPEN POSITIONS — TAKE A SIDE ON A MARKET OR ASK THE CO-PILOT.
+        NO OPEN POSITIONS - TAKE A SIDE ON A MARKET OR ASK THE CO-PILOT.
       </p>
     );
   }

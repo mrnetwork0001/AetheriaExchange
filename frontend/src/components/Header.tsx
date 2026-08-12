@@ -45,11 +45,11 @@ export function Header() {
             onClick={() => switchChain({ chainId: xLayerTestnet.id })}
             title="Click to switch to X Layer"
           >
-            WRONG NETWORK — SWITCH
+            WRONG NETWORK - SWITCH
           </button>
         ) : (
           <span className="chain-badge">
-            {chain ? `${chain.name.toUpperCase()} · CHAIN ${chain.id}` : "CHAIN —"}
+            {chain ? `${chain.name.toUpperCase()} · CHAIN ${chain.id}` : "CHAIN -"}
           </span>
         )}
 

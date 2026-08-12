@@ -191,7 +191,7 @@ export function MarketDetailModal({
               {bets.length === 0 ? (
                 <p className="empty-note">
                   {activityPartial
-                    ? "NO RECENT BETS OBSERVED — PUBLIC RPC LIMITS HISTORY TO RECENT BLOCKS."
+                    ? "NO RECENT BETS OBSERVED - PUBLIC RPC LIMITS HISTORY TO RECENT BLOCKS."
                     : "NO BETS RECORDED YET."}
                 </p>
               ) : (

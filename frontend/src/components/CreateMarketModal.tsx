@@ -144,7 +144,7 @@ export function CreateMarketModal({
 
           <p className="modal-note">
             MARKET CREATION IS PERMISSIONLESS. RESOLUTION IS PERFORMED BY THE
-            VENUE RESOLVER AFTER CLOSE — 2% OF THE LOSING POOL FUNDS THE
+            VENUE RESOLVER AFTER CLOSE - 2% OF THE LOSING POOL FUNDS THE
             PROTOCOL.
           </p>
 
@@ -154,7 +154,7 @@ export function CreateMarketModal({
 
           {!live ? (
             <button className="approve-btn" disabled>
-              VENUE NOT DEPLOYED — TESTNET SOON
+              VENUE NOT DEPLOYED - TESTNET SOON
             </button>
           ) : (
             <button

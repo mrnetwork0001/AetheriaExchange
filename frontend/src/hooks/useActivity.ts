@@ -29,7 +29,7 @@ const EV_RES = parseAbiItem(
 const EV_CANCEL = parseAbiItem("event MarketCancelled(uint256 indexed marketId)");
 
 // X Layer public RPCs cap eth_getLogs ranges at 100 blocks, so backfill is a
-// bounded recent window — full history would need an indexer.
+// bounded recent window - full history would need an indexer.
 const BACKFILL_BLOCKS = 99n;
 const MAX_ITEMS = 24;
 
@@ -59,7 +59,7 @@ export function useActivity(
   const [items, setItems] = useState<ActivityItem[]>([]);
 
   // Mappers read markets through a ref so the watcher callbacks stay
-  // referentially stable — an unstable onLogs makes wagmi re-subscribe the
+  // referentially stable - an unstable onLogs makes wagmi re-subscribe the
   // RPC filter on every render, dropping events mined in the gap.
   const marketsRef = useRef(markets);
   marketsRef.current = markets;
@@ -102,7 +102,7 @@ export function useActivity(
       id: `${log.transactionHash}-${log.logIndex}`,
       kind: "CANCELLED",
       marketId: id,
-      text: `✕ CANCELLED · ${shortTitle(marketsRef.current, id)} — STAKES REFUNDABLE`,
+      text: `✕ CANCELLED · ${shortTitle(marketsRef.current, id)} - STAKES REFUNDABLE`,
     };
   }, []);
 

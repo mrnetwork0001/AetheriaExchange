@@ -15,7 +15,7 @@ interface ChatMessage {
 
 const WELCOME: ChatMessage = {
   role: "copilot",
-  text: "Co-pilot online. Ask about a market, or tell me a position — I turn intent into a 1-click trade ticket with a correlated OKX DEX hedge.",
+  text: "Co-pilot online. Ask about a market, or tell me a position - I turn intent into a 1-click trade ticket with a correlated OKX DEX hedge.",
 };
 
 const SUGGESTED_PROMPTS = [
@@ -25,7 +25,7 @@ const SUGGESTED_PROMPTS = [
   "How would I hedge BTC exposure with USDT?",
 ];
 
-// Progressive text reveal — runs once per mounted message.
+// Progressive text reveal - runs once per mounted message.
 function Typewriter({ text }: { text: string }) {
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -159,7 +159,7 @@ export function CopilotPanel({
                     <div className="summary">{msg.intent.summary}</div>
                     {msg.intent.outcomeTrade && (
                       <div className="intent-leg">
-                        LEG 1 · OUTCOME — {msg.intent.outcomeTrade.amount} OKB{" "}
+                        LEG 1 · OUTCOME - {msg.intent.outcomeTrade.amount} OKB{" "}
                         {msg.intent.outcomeTrade.isYes ? "YES" : "NO"} on market
                         #{msg.intent.outcomeTrade.marketId}
                         {quote && <div className="intent-quote">{quote}</div>}
@@ -167,7 +167,7 @@ export function CopilotPanel({
                     )}
                     {msg.intent.dexTrade && (
                       <div className="intent-leg">
-                        LEG {msg.intent.outcomeTrade ? 2 : 1} · OKX DEX —{" "}
+                        LEG {msg.intent.outcomeTrade ? 2 : 1} · OKX DEX -{" "}
                         {msg.intent.dexTrade.amount} {msg.intent.dexTrade.tokenIn}{" "}
                         → {msg.intent.dexTrade.tokenOut}
                       </div>

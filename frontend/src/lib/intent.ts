@@ -10,7 +10,7 @@ export type IntentType =
 export interface MarketDraft {
   title: string; // precise, objectively resolvable YES/NO question
   category: string;
-  endTimeIso: string; // ISO 8601 — when trading should close
+  endTimeIso: string; // ISO 8601 - when trading should close
   rationale: string;
 }
 
