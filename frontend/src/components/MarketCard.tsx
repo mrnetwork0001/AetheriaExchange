@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { formatEther } from "viem";
 import type { Market } from "@/lib/contract";
+import { useNow } from "@/hooks/useNow";
 
 function countdown(endTime: number, now: number): string {
   const secs = endTime - now;
@@ -11,19 +11,6 @@ function countdown(endTime: number, now: number): string {
   if (d > 0) return `T-${d}D ${Math.floor((secs % 86400) / 3600)}H`;
   const h = Math.floor(secs / 3600);
   return `T-${h}H ${Math.floor((secs % 3600) / 60)}M`;
-}
-
-// The clock is client-only: rendering Date.now() during SSR produces a
-// server/client text mismatch and a hydration error.
-function useNow(): number | null {
-  const [now, setNow] = useState<number | null>(null);
-  useEffect(() => {
-    const tick = () => setNow(Math.floor(Date.now() / 1000));
-    tick();
-    const timer = setInterval(tick, 30_000);
-    return () => clearInterval(timer);
-  }, []);
-  return now;
 }
 
 export function MarketCard({
