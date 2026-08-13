@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityTicker } from "@/components/ActivityTicker";
+import { AgentOpsPanel, useAgentOps } from "@/components/AgentOps";
 import { CopilotPanel } from "@/components/CopilotPanel";
 import { CreateMarketModal } from "@/components/CreateMarketModal";
 import { ExecutionModal } from "@/components/ExecutionModal";
@@ -25,7 +26,7 @@ function isoToLocalInput(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-type Tab = "markets" | "positions";
+type Tab = "markets" | "positions" | "agents";
 
 export default function Home() {
   const { markets, live, loading, refetch } = useMarkets();
@@ -39,6 +40,7 @@ export default function Home() {
   );
 
   const [tab, setTab] = useState<Tab>("markets");
+  const ops = useAgentOps();
   const [category, setCategory] = useState("ALL");
   const [activeIntent, setActiveIntent] = useState<AppIntent | null>(null);
   // Store only the id so the modal always renders fresh pools/status from
@@ -54,6 +56,12 @@ export default function Home() {
     () => markets.find((m) => m.id === detailId) ?? null,
     [markets, detailId]
   );
+
+  // Deep link: ?tab=agents|positions selects a tab on load.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t === "agents" || t === "positions") setTab(t);
+  }, []);
 
   // Deep link: ?market=<id> opens the detail view exactly once.
   useEffect(() => {
@@ -132,8 +140,22 @@ export default function Home() {
                 MY POSITIONS
                 {positions.length > 0 ? ` · ${positions.length}` : ""}
               </button>
+              <button
+                className={`tab ${tab === "agents" ? "active" : ""}`}
+                onClick={() => setTab("agents")}
+              >
+                AGENT OPS
+              </button>
             </div>
             <div className="markets-head-right">
+              <span
+                className="agents-chip"
+                onClick={() => setTab("agents")}
+                title="Open the AGENT OPS console"
+              >
+                <span className="ops-dot on" />
+                {ops.onlineCount}/4 AGENTS ONLINE
+              </span>
               {!live && <span className="preview-tag">OFFLINE PREVIEW</span>}
               <button
                 className="connect-btn"
@@ -181,7 +203,7 @@ export default function Home() {
                 )}
               </div>
             </>
-          ) : (
+          ) : tab === "positions" ? (
             <PositionsPanel
               positions={positions}
               live={live}
@@ -191,6 +213,8 @@ export default function Home() {
                 refetchPositions();
               }}
             />
+          ) : (
+            <AgentOpsPanel ops={ops} />
           )}
         </div>
 

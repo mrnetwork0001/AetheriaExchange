@@ -1489,6 +1489,315 @@ button {
   }
 }
 
+/* agent ops console */
+.agents-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.agents-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.ops-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+  flex-shrink: 0;
+}
+
+.ops-dot.on {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(126, 231, 5, 0.7);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.ops-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ops-roster {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.ops-agent {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  padding: 13px 14px;
+}
+
+.ops-agent-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ops-agent-name {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--text);
+}
+
+.ops-agent-verb {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--label);
+}
+
+.ops-agent-desc {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+
+.ops-agent-status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  margin-top: 3px;
+}
+
+.ops-agent-status.on {
+  color: var(--accent);
+}
+
+.ops-feed {
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  padding: 14px 16px;
+  height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ops-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  flex-wrap: wrap;
+}
+
+.ops-time {
+  color: var(--faint);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.ops-tag {
+  letter-spacing: 0.1em;
+  font-size: 9.5px;
+  flex-shrink: 0;
+  color: var(--dim);
+}
+
+.ops-tag-market-maker {
+  color: var(--accent);
+}
+
+.ops-tag-pulse-drafter {
+  color: var(--label);
+}
+
+.ops-tag-resolver {
+  color: var(--violet);
+}
+
+.ops-tag-copilot {
+  color: var(--text);
+}
+
+.ops-action {
+  color: var(--text);
+  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  flex-shrink: 0;
+}
+
+.ops-detail {
+  color: var(--dim);
+  min-width: 0;
+}
+
+.ops-empty {
+  margin: auto;
+  max-width: 420px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ops-empty p {
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.6;
+}
+
+.ops-note {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  line-height: 1.6;
+}
+
+@media (max-width: 1024px) {
+  .ops-roster {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .ops-roster {
+    grid-template-columns: 1fr;
+  }
+
+  .agents-chip {
+    display: none;
+  }
+}
+
+/* ai fair value */
+.fair-box {
+  border: 1px solid var(--line-soft);
+  border-left: 2px solid var(--violet);
+  background: var(--panel);
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fair-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fair-engine {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+}
+
+.fair-loading {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.fair-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fair-num {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  color: var(--violet);
+  letter-spacing: 0.02em;
+}
+
+.fair-vs {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+}
+
+.fair-verdict {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  margin-left: auto;
+}
+
+.fair-verdict.flat {
+  color: var(--faint);
+}
+
+.fair-verdict.yes {
+  color: var(--accent);
+}
+
+.fair-verdict.no {
+  color: var(--violet);
+}
+
+.fair-rationale {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.55;
+}
+
+.fair-disclaimer {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
+
+/* co-pilot voice input */
+.copilot-input .mic-btn {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  padding: 0 12px;
+  cursor: pointer;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.copilot-input .mic-btn:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.copilot-input .mic-btn.listening {
+  color: var(--red);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.copilot-input .mic-btn:disabled {
+  color: var(--faint);
+  cursor: default;
+}
+
 /* scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
