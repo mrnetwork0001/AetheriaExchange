@@ -46,8 +46,12 @@ function stripFences(text: string): string {
     .trim();
 }
 
+// Both providers bill per call - never hold a serverless function open on a
+// hung upstream.
+const PROVIDER_TIMEOUT_MS = 60_000;
+
 async function anthropicChat(args: AiChatArgs): Promise<AiResult> {
-  const client = new Anthropic();
+  const client = new Anthropic({ timeout: PROVIDER_TIMEOUT_MS });
   const response = await client.messages.create({
     model: "claude-opus-5",
     max_tokens: args.maxTokens ?? 4096,
@@ -91,6 +95,7 @@ async function zeroGChat(args: AiChatArgs): Promise<AiResult> {
 
   const res = await fetch(url, {
     method: "POST",
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     headers,
     body: JSON.stringify({
       model,

@@ -1,7 +1,23 @@
 import { NextResponse } from "next/server";
 import { aiChatJson } from "@/lib/aiChat";
+import { takeRate } from "@/lib/rateBudget";
 
 export const runtime = "nodejs";
+
+// Every call bills the inference provider - cap inputs, rate-budget callers,
+// and cache per title so N users opening the same market cost one call.
+const MAX_TITLE_LEN = 300;
+const CACHE_TTL_MS = 10 * 60_000;
+const CACHE_MAX = 500;
+
+interface CachedOdds {
+  at: number;
+  body: { yesProbability: number; rationale: string; engine: string };
+}
+
+const g = globalThis as unknown as { __aetheriaOdds?: Map<string, CachedOdds> };
+g.__aetheriaOdds ??= new Map();
+const oddsCache = g.__aetheriaOdds;
 
 // Fair-odds estimate for a market question. Consumed by the market-maker
 // agent to weight its liquidity seeding; also usable by any client.
@@ -31,10 +47,28 @@ export async function POST(req: Request) {
   if (!title) {
     return NextResponse.json({ error: "Missing title" }, { status: 400 });
   }
+  if (title.length > MAX_TITLE_LEN) {
+    return NextResponse.json({ error: "Title too long" }, { status: 400 });
+  }
+  const category = String(body.category ?? "").slice(0, 24);
+
+  const cacheKey = `${category}|${title}`;
+  const hit = oddsCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return NextResponse.json(hit.body);
+  }
+
+  if (!takeRate("odds", req, 30, 2000)) {
+    return NextResponse.json({
+      yesProbability: 0.5,
+      rationale: "Rate budget reached - neutral prior.",
+      engine: "offline-fallback",
+    });
+  }
 
   const result = await aiChatJson({
     system: SYSTEM_PROMPT,
-    user: JSON.stringify({ title, category: body.category ?? null }),
+    user: JSON.stringify({ title, category: category || null }),
     schema: ODDS_SCHEMA as unknown as Record<string, unknown>,
     maxTokens: 1024,
   });
@@ -62,9 +96,17 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({
+  const out = {
     yesProbability: Math.min(0.95, Math.max(0.05, raw)),
     rationale: String(result.json?.rationale ?? ""),
     engine: result.engine,
-  });
+  };
+  if (oddsCache.size >= CACHE_MAX) {
+    const now = Date.now();
+    for (const [k, v] of oddsCache)
+      if (now - v.at >= CACHE_TTL_MS) oddsCache.delete(k);
+    if (oddsCache.size >= CACHE_MAX) oddsCache.clear();
+  }
+  oddsCache.set(cacheKey, { at: Date.now(), body: out });
+  return NextResponse.json(out);
 }
