@@ -39,10 +39,13 @@ const CONFIG_PATH = path.join(
 const DRY_RUN = process.env.RESOLVER_DRY_RUN === "1";
 const MAX_STALENESS_SEC = Number(process.env.RESOLVER_MAX_STALENESS_SEC ?? 2 * 3600);
 // Readings within this fraction of the threshold go to the manual queue:
-// our adapters approximate the cited source (aggregation differences,
-// timing), so the dispute zone must never auto-settle. resolveMarket is
-// final.
+// aggregated metrics (TVL sums, cross-venue volume) differ between sources
+// and snapshots, so the dispute zone must never auto-settle - resolveMarket
+// is final. Adapters reading an EXACT published figure (an official
+// exchange close) override this with their own `margin`, since there is no
+// aggregation ambiguity to protect against.
 const SETTLE_MARGIN = Number(process.env.RESOLVER_SETTLE_MARGIN ?? "0.01");
+const MARGIN_FLOOR = process.env.RESOLVER_SETTLE_MARGIN ? SETTLE_MARGIN : 0;
 
 // Titles whose comparator isn't a plain "above X" are never auto-settled -
 // the settlement logic below hardcodes value > threshold.
@@ -52,31 +55,160 @@ function log(msg) {
   console.log(`[RESOLVER ${new Date().toISOString()}] ${msg}`);
 }
 
-// "above $45M" / "above 50K" / "above 1.2 billion" → number.
-// The (?![a-z]) guard stops the magnitude suffix from swallowing the first
-// letter of the NEXT word: "above $50 by 23:59" is 50, not 50 billion.
+// Short everyday words that begin like magnitude notation.
+const THRESHOLD_STOPWORDS = new Set([
+  "by",
+  "be",
+  "but",
+  "the",
+  "to",
+  "than",
+  "max",
+  "min",
+  "mid",
+  "may",
+  "met",
+  "buy",
+  "bid",
+  "tbd",
+]);
+
+const MAGNITUDES = {
+  k: 1e3,
+  thousand: 1e3,
+  m: 1e6,
+  mm: 1e6,
+  mn: 1e6,
+  million: 1e6,
+  b: 1e9,
+  bn: 1e9,
+  bln: 1e9,
+  billion: 1e9,
+  t: 1e12,
+  tn: 1e12,
+  trillion: 1e12,
+};
+
+// "above $45M" / "above 50K" / "above 1.2 billion" / "above $330 on 2026-08-13"
+// → number, or null when the notation is anything this cannot read exactly.
+//
+// Returning null (→ manual queue) on an unrecognised suffix is the whole
+// point: a regex that lets the number group backtrack will happily read
+// "$12bn" as 1, and a threshold that wrong settles a market on a value three
+// orders of magnitude off - with the dispute band shrinking to match, so
+// nothing downstream catches it.
 function parseThreshold(title) {
   const m = title.match(
-    /above\s+\$?([\d,]+(?:\.\d+)?)\s*(thousand|million|billion|k|m|b)?(?![a-z])/i
+    /above\s+\$?\s*([\d,]+(?:\.\d+)?)([a-zA-Z]*)(?:\s+([a-zA-Z]+))?/i
   );
   if (!m) return null;
   const base = Number(m[1].replace(/,/g, ""));
   if (!Number.isFinite(base)) return null;
-  const mult =
-    {
-      k: 1e3,
-      thousand: 1e3,
-      m: 1e6,
-      million: 1e6,
-      b: 1e9,
-      billion: 1e9,
-    }[m[2]?.toLowerCase()] ?? 1;
-  return base * mult;
+
+  const attached = (m[2] ?? "").toLowerCase();
+  if (attached) {
+    // Glued to the digits, so it is meant as a magnitude - read it exactly
+    // or refuse.
+    return attached in MAGNITUDES ? base * MAGNITUDES[attached] : null;
+  }
+
+  const next = (m[3] ?? "").toLowerCase();
+  if (next in MAGNITUDES) return base * MAGNITUDES[next];
+  // A short token that looks like magnitude notation but is not one we know
+  // ("bnn", "trn") must not be silently ignored - unless it is just an
+  // ordinary English word that happens to start with the same letter
+  // ("above $50 by 23:59").
+  if (
+    next &&
+    next.length <= 3 &&
+    /^[kmbt]/.test(next) &&
+    !THRESHOLD_STOPWORDS.has(next)
+  ) {
+    return null;
+  }
+  return base;
+}
+
+// Tokenized-equity (xStocks) markets resolve against the underlying stock's
+// official closing price. Matching is CASE-SENSITIVE: lowercase "coin" is an
+// ordinary word, uppercase COIN is a ticker. The optional trailing "x"
+// accepts the tokenized symbol (TSLAx) as well as the ticker (TSLA).
+const EQUITY_TICKERS = {
+  TSLA: "Tesla",
+  AAPL: "Apple",
+  NVDA: "NVIDIA",
+  MSFT: "Microsoft",
+  META: "Meta",
+  GOOGL: "Alphabet",
+  AMZN: "Amazon",
+  COIN: "Coinbase",
+  SPY: "S&P 500 ETF",
+};
+
+// Close-based verbs ONLY. "trades above" is a touch condition - it can be
+// satisfied intraday and still close below - and this adapter answers with
+// the daily close, so such questions must go to a human instead.
+const EQUITY_COMPARATOR = /(closes?|closing|finishes?|settles?)\s+above/i;
+
+function equityTickersIn(title) {
+  return Object.keys(EQUITY_TICKERS).filter((t) =>
+    new RegExp(`\\b${t}x?\\b`).test(title)
+  );
+}
+
+// Yahoo Finance chart API - keyless, needs a browser User-Agent. Returns the
+// last COMPLETED daily close and the exchange-local session date it belongs
+// to, so the resolver can refuse to settle before the deciding session.
+//
+// The trailing daily candle of a session that is still trading carries the
+// LIVE price in its close field. Settling on that would resolve a market on
+// an intraday quote, so any candle inside the current trading period is
+// discarded until that period has ended.
+async function equityClose(ticker) {
+  const res = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=10d`,
+    { headers: { "User-Agent": "Mozilla/5.0" } }
+  );
+  if (!res.ok) throw new Error(`yahoo ${res.status}`);
+  const j = await res.json();
+  const r = j?.chart?.result?.[0];
+  const ts = r?.timestamp ?? [];
+  const closes = r?.indicators?.quote?.[0]?.close ?? [];
+
+  const period = r?.meta?.currentTradingPeriod?.regular;
+  if (!period || !Number.isFinite(Number(period.start))) {
+    // Without the trading-period bounds there is no way to tell a completed
+    // close from a live quote - fail closed.
+    throw new Error("no trading-period metadata to bound the session");
+  }
+  const nowSec = Math.floor(Date.now() / 1000);
+  // Treat any candle at or after the current period's open as unfinished
+  // until that period has ended. Before the opening bell nowSec < start, so
+  // the guard must not depend on the session having begun.
+  const sessionInProgress = nowSec < Number(period.end);
+
+  let i = closes.length - 1;
+  while (i >= 0) {
+    const unfinished =
+      sessionInProgress && Number(ts[i]) >= Number(period.start);
+    if (Number.isFinite(closes[i]) && ts[i] && !unfinished) break;
+    i--;
+  }
+  if (i < 0) throw new Error("no completed session close available");
+
+  const asOf = new Date((ts[i] + (r?.meta?.gmtoffset ?? 0)) * 1000)
+    .toISOString()
+    .slice(0, 10);
+  return { value: closes[i], asOf };
 }
 
 // Metric adapters: match a market title to a public data source. Extend as
 // the Pulse Drafter's repertoire grows. Adapters return the current value in
-// the same unit the title's threshold uses.
+// the same unit the title's threshold uses - either a bare number (live
+// metric, "the value right now") or { value, asOf } where asOf is the UTC
+// date string (YYYY-MM-DD) the reading belongs to. An asOf reading is only
+// allowed to settle a market whose close date it actually covers: an equity
+// market closing Friday must not settle on Thursday's close.
 const ADAPTERS = [
   {
     // CoinGecko total_volume spans ALL venues (CEX-dominated). Titles that
@@ -119,7 +251,9 @@ const ADAPTERS = [
     // DefiLlama - narrower metrics (tokenized-treasury AUM, single-protocol
     // TVL) must go to the manual queue, not settle against the sector sum.
     name: "RWA sector TVL (USD, DefiLlama)",
-    match: /^(?=[\s\S]*\brwa\b)(?=[\s\S]*\btvl\b)(?=[\s\S]*defi\s*llama)/i,
+    // Sector-wide only: a chain-scoped RWA question would be settled against
+    // the global sum, which is a different (much larger) number.
+    match: /^(?=[\s\S]*\brwa\b)(?=[\s\S]*\btvl\b)(?=[\s\S]*defi\s*llama)(?![\s\S]*\bx\s*layer\b)/i,
     fetch: async () => {
       const res = await fetch("https://api.llama.fi/protocols");
       if (!res.ok) throw new Error(`defillama ${res.status}`);
@@ -132,11 +266,57 @@ const ADAPTERS = [
       return v;
     },
   },
+  {
+    // Tokenized equities: exactly one known ticker plus an "above"
+    // comparator. Two tickers in one title is ambiguous - no match, manual
+    // queue.
+    name: "US equity daily close (USD, Yahoo Finance)",
+    match: (title) =>
+      equityTickersIn(title).length === 1 && EQUITY_COMPARATOR.test(title),
+    fetch: async (title) => equityClose(equityTickersIn(title)[0]),
+    // An official closing price is an exact published number, not an
+    // aggregate - only a hair of rounding tolerance is warranted.
+    margin: 0.0005,
+  },
+  {
+    name: "X Layer DeFi TVL (USD, DefiLlama)",
+    // Requires the phrase "total [DeFi] TVL", so a protocol-scoped question
+    // ("iZUMi's TVL on X Layer") never settles against the whole chain.
+    match: /^(?=[\s\S]*\bx\s*layer\b)(?=[\s\S]*\btotal\s+(?:defi\s+)?tvl\b)(?![\s\S]*\brwa\b)/i,
+    fetch: async () => {
+      const res = await fetch("https://api.llama.fi/v2/chains");
+      if (!res.ok) throw new Error(`defillama ${res.status}`);
+      const j = await res.json();
+      const row = Array.isArray(j)
+        ? j.find((c) => c?.gecko_id === "x-layer" || c?.name === "X Layer")
+        : null;
+      const v = Number(row?.tvl);
+      if (!(v > 0)) throw new Error("no X Layer TVL in response");
+      return v;
+    },
+  },
+  {
+    // Total stablecoin circulating supply on X Layer. Deliberately NOT a
+    // per-issuer metric: DefiLlama's USDC series on X Layer currently tracks
+    // only the deprecated bridged token, so a "USDC supply" question would
+    // resolve against a number that does not mean what a reader assumes.
+    name: "X Layer stablecoin supply (USD, DefiLlama)",
+    match: /^(?=[\s\S]*\bx\s*layer\b)(?=[\s\S]*stablecoin)(?=[\s\S]*(supply|circulating))/i,
+    fetch: async () => {
+      const res = await fetch("https://stablecoins.llama.fi/stablecoinchains");
+      if (!res.ok) throw new Error(`defillama stablecoins ${res.status}`);
+      const j = await res.json();
+      const row = Array.isArray(j) ? j.find((c) => c?.name === "X Layer") : null;
+      const v = Number(row?.totalCirculatingUSD?.peggedUSD);
+      if (!(v > 0)) throw new Error("no X Layer stablecoin supply in response");
+      return v;
+    },
+  },
 ];
 
 // Categories the agents author machine-resolvable questions for. Everything
 // else always goes to the manual queue.
-const AUTO_CATEGORIES = new Set(["PULSE", "RWA"]);
+const AUTO_CATEGORIES = new Set(["PULSE", "RWA", "EQUITY"]);
 
 async function main() {
   const chainId = String(hre.network.config.chainId);
@@ -186,7 +366,9 @@ async function main() {
         reasons.push("closed too long ago for a live reading");
       if (NEGATION.test(m.title)) reasons.push("non-'above' comparator");
 
-      const matched = ADAPTERS.filter((a) => a.match.test(m.title));
+      const matched = ADAPTERS.filter((a) =>
+        typeof a.match === "function" ? a.match(m.title) : a.match.test(m.title)
+      );
       if (matched.length === 0) reasons.push("no metric adapter");
       if (matched.length > 1) reasons.push("ambiguous metric adapters");
 
@@ -199,16 +381,57 @@ async function main() {
       }
 
       const adapter = matched[0];
-      const value = await adapter.fetch();
-      if (Math.abs(value - threshold) <= threshold * SETTLE_MARGIN) {
+      const reading = await adapter.fetch(m.title);
+      const value = typeof reading === "number" ? reading : reading?.value;
+      const asOf = typeof reading === "number" ? null : (reading?.asOf ?? null);
+      if (!Number.isFinite(value)) {
+        manual.push(`#${id} "${m.title}" (adapter returned no usable value)`);
+        continue;
+      }
+
+      // A dated reading must be exactly the session the market names.
+      //
+      // The session date written IN THE TITLE is authoritative when present:
+      // asOf is an exchange-local date while endTime is a UTC instant, so a
+      // market that closes a few hours after the bell can legitimately carry
+      // the NEXT UTC date, and comparing against endTime alone would both
+      // reject the right session and nominate the following one. When the
+      // title names no date, fall back to the close date. Any mismatch goes
+      // to a human - never a guess, because resolveMarket is final.
+      if (asOf) {
+        const closeDate = new Date(Number(m.endTime) * 1000)
+          .toISOString()
+          .slice(0, 10);
+        const titleDate = m.title.match(/\b(20\d{2}-\d{2}-\d{2})\b/)?.[1];
+        const wanted = titleDate ?? closeDate;
+        if (asOf !== wanted) {
+          manual.push(
+            `#${id} "${m.title}" (reading is for session ${asOf}, market names ${wanted} - ${asOf < wanted ? "that session has not printed yet" : "that session already passed"})`
+          );
+          continue;
+        }
+        // The named session must also have completed before trading closed.
+        if (titleDate && closeDate < titleDate) {
+          manual.push(
+            `#${id} "${m.title}" (market closed ${closeDate}, before its own named session ${titleDate})`
+          );
+          continue;
+        }
+      }
+
+      // An explicitly-set RESOLVER_SETTLE_MARGIN is a floor for every
+      // adapter, so widening it stays a working kill-switch even for
+      // adapters that declare a tighter margin of their own.
+      const margin = Math.max(adapter.margin ?? SETTLE_MARGIN, MARGIN_FLOOR);
+      if (Math.abs(value - threshold) <= threshold * margin) {
         manual.push(
-          `#${id} "${m.title}" (reading ${value.toLocaleString("en-US")} within ${(SETTLE_MARGIN * 100).toFixed(1)}% of threshold - too close to auto-settle)`
+          `#${id} "${m.title}" (reading ${value.toLocaleString("en-US")} within ${(margin * 100).toFixed(2)}% of threshold - too close to auto-settle)`
         );
         continue;
       }
       const outcome = value > threshold;
       log(
-        `#${id} "${m.title}" · ${adapter.name} = ${value.toLocaleString("en-US")} vs ${threshold.toLocaleString("en-US")} → ${outcome ? "YES" : "NO"}`
+        `#${id} "${m.title}" · ${adapter.name} = ${value.toLocaleString("en-US")}${asOf ? ` (as of ${asOf})` : ""} vs ${threshold.toLocaleString("en-US")} → ${outcome ? "YES" : "NO"}`
       );
 
       if (!DRY_RUN) {
