@@ -1,7 +1,8 @@
 /* ── Aetheria Exchange design system ─────────────────────────────────────
    Terminal/blueprint aesthetic: near-black ground, thin 1px borders,
-   monospace micro-labels in muted gold, cyan/violet accent glows,
-   big tight-tracked sans headlines. */
+   monospace micro-labels in muted gold, OKX-green/violet accent glows
+   (green = YES/action/positive, violet = NO/AI), big tight-tracked sans
+   headlines. */
 
 :root {
   --bg: #060609;
@@ -14,12 +15,12 @@
   --dim: #8b8b98;
   --faint: #55555f;
   --label: #a5966b;
-  --cyan: #3fe0ff;
-  --cyan-dim: rgba(63, 224, 255, 0.12);
+  --accent: #7ee705;
+  --accent-dim: rgba(126, 231, 5, 0.12);
   --violet: #a06bff;
   --violet-dim: rgba(160, 107, 255, 0.12);
   --red: #ff6b6b;
-  --green: #55e6a5;
+  --green: #7ee705;
   --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
 }
@@ -51,7 +52,7 @@ body {
 }
 
 a {
-  color: var(--cyan);
+  color: var(--accent);
   text-decoration: none;
 }
 
@@ -61,8 +62,8 @@ button {
 }
 
 ::selection {
-  background: var(--cyan-dim);
-  color: var(--cyan);
+  background: var(--accent-dim);
+  color: var(--accent);
 }
 
 /* ── primitives ── */
@@ -176,7 +177,7 @@ button {
   height: 6px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 8px rgba(85, 230, 165, 0.8);
+  box-shadow: 0 0 8px rgba(126, 231, 5, 0.8);
   animation: pulse 2.2s ease-in-out infinite;
 }
 
@@ -190,16 +191,16 @@ button {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent);
   background: transparent;
-  border: 1px solid rgba(63, 224, 255, 0.45);
+  border: 1px solid rgba(126, 231, 5, 0.45);
   padding: 9px 18px;
   transition: box-shadow 0.2s, background 0.2s;
 }
 
 .connect-btn:hover {
-  background: var(--cyan-dim);
-  box-shadow: 0 0 18px rgba(63, 224, 255, 0.25);
+  background: var(--accent-dim);
+  box-shadow: 0 0 18px rgba(126, 231, 5, 0.25);
 }
 
 /* ── hero ── */
@@ -247,8 +248,8 @@ button {
 }
 
 .market-card:hover {
-  border-color: rgba(63, 224, 255, 0.5);
-  box-shadow: 0 0 24px rgba(63, 224, 255, 0.08);
+  border-color: rgba(126, 231, 5, 0.5);
+  box-shadow: 0 0 24px rgba(126, 231, 5, 0.08);
 }
 
 .market-meta {
@@ -279,8 +280,8 @@ button {
 }
 
 .odds-bar .yes {
-  background: var(--cyan);
-  box-shadow: 0 0 8px rgba(63, 224, 255, 0.6);
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(126, 231, 5, 0.6);
 }
 
 .odds-bar .no {
@@ -297,7 +298,7 @@ button {
 }
 
 .odds-row .yes-pct {
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 .odds-row .no-pct {
@@ -320,13 +321,13 @@ button {
 }
 
 .btn-yes {
-  color: var(--cyan);
-  border: 1px solid rgba(63, 224, 255, 0.45);
+  color: var(--accent);
+  border: 1px solid rgba(126, 231, 5, 0.45);
 }
 
 .btn-yes:hover {
-  background: var(--cyan-dim);
-  box-shadow: 0 0 14px rgba(63, 224, 255, 0.2);
+  background: var(--accent-dim);
+  box-shadow: 0 0 14px rgba(126, 231, 5, 0.2);
 }
 
 .btn-no {
@@ -479,7 +480,7 @@ button {
   background: transparent;
   border: none;
   border-left: 1px solid var(--line-soft);
-  color: var(--cyan);
+  color: var(--accent);
   padding: 0 18px;
 }
 
@@ -516,7 +517,7 @@ button {
   width: min(560px, calc(100vw - 32px));
   background: var(--panel);
   border: 1px solid var(--line);
-  box-shadow: 0 0 60px rgba(63, 224, 255, 0.07);
+  box-shadow: 0 0 60px rgba(126, 231, 5, 0.07);
 }
 
 .modal-head {
@@ -573,7 +574,7 @@ button {
   color: var(--text);
 }
 
-.ticket-row .v.yes { color: var(--cyan); }
+.ticket-row .v.yes { color: var(--accent); }
 .ticket-row .v.no { color: var(--violet); }
 
 .amount-input {
@@ -589,7 +590,7 @@ button {
 }
 
 .amount-input:focus {
-  border-color: rgba(63, 224, 255, 0.5);
+  border-color: rgba(126, 231, 5, 0.5);
 }
 
 .leg-status {
@@ -616,16 +617,16 @@ button {
   font-size: 12px;
   letter-spacing: 0.2em;
   color: var(--bg);
-  background: var(--cyan);
+  background: var(--accent);
   border: none;
   padding: 14px 0;
   width: 100%;
-  box-shadow: 0 0 22px rgba(63, 224, 255, 0.35);
+  box-shadow: 0 0 22px rgba(126, 231, 5, 0.35);
   transition: box-shadow 0.2s;
 }
 
 .approve-btn:hover:not(:disabled) {
-  box-shadow: 0 0 34px rgba(63, 224, 255, 0.55);
+  box-shadow: 0 0 34px rgba(126, 231, 5, 0.55);
 }
 
 .approve-btn:disabled {
@@ -684,8 +685,8 @@ button {
 }
 
 .tab.active {
-  color: var(--cyan);
-  background: var(--cyan-dim);
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 
 .markets-head-right {
@@ -792,7 +793,7 @@ button {
   color: var(--text);
 }
 
-.ticker-item.t-yes { color: var(--cyan); }
+.ticker-item.t-yes { color: var(--accent); }
 .ticker-item.t-no { color: var(--violet); }
 .ticker-item.t-new { color: var(--label); }
 .ticker-item.t-res { color: var(--green); }
@@ -851,7 +852,7 @@ button {
 }
 
 .pos-status.open { color: var(--label); border-color: rgba(165, 150, 107, 0.4); }
-.pos-status.won { color: var(--green); border-color: rgba(85, 230, 165, 0.4); }
+.pos-status.won { color: var(--green); border-color: rgba(126, 231, 5, 0.4); }
 .pos-status.lost { color: var(--red); border-color: rgba(255, 107, 107, 0.35); }
 .pos-status.claimed { color: var(--faint); }
 
@@ -890,12 +891,12 @@ button {
   background: var(--green);
   border: none;
   padding: 10px 18px;
-  box-shadow: 0 0 18px rgba(85, 230, 165, 0.35);
+  box-shadow: 0 0 18px rgba(126, 231, 5, 0.35);
   transition: box-shadow 0.2s;
 }
 
 .claim-btn:hover:not(:disabled) {
-  box-shadow: 0 0 28px rgba(85, 230, 165, 0.55);
+  box-shadow: 0 0 28px rgba(126, 231, 5, 0.55);
 }
 
 .claim-btn:disabled {
@@ -949,7 +950,7 @@ button {
   gap: 6px;
 }
 
-.pool-box.yes-box { border-left: 2px solid var(--cyan); }
+.pool-box.yes-box { border-left: 2px solid var(--accent); }
 .pool-box.no-box { border-left: 2px solid var(--violet); }
 
 .pool-box .k {
@@ -1029,7 +1030,7 @@ button {
 }
 
 .text-input:focus {
-  border-color: rgba(63, 224, 255, 0.5);
+  border-color: rgba(126, 231, 5, 0.5);
 }
 
 /* ── OKX interface routing ── */
@@ -1120,7 +1121,7 @@ button {
 }
 
 .market-title-btn:hover .market-title {
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 .market-title {
@@ -1305,9 +1306,9 @@ button {
   stroke-width: 1;
 }
 
-.arch-box-cyan {
-  stroke: rgba(63, 224, 255, 0.55);
-  filter: drop-shadow(0 0 8px rgba(63, 224, 255, 0.25));
+.arch-box-green {
+  stroke: rgba(126, 231, 5, 0.55);
+  filter: drop-shadow(0 0 8px rgba(126, 231, 5, 0.25));
 }
 
 .arch-box-violet {
@@ -1329,8 +1330,8 @@ button {
   stroke-width: 1;
 }
 
-.arch-line-cyan {
-  stroke: rgba(63, 224, 255, 0.5);
+.arch-line-green {
+  stroke: rgba(126, 231, 5, 0.5);
 }
 
 .arch-line-violet {
@@ -1361,7 +1362,7 @@ button {
   text-anchor: middle;
 }
 
-.arch-label-cyan { fill: rgba(63, 224, 255, 0.8); }
+.arch-label-green { fill: rgba(126, 231, 5, 0.8); }
 .arch-label-violet { fill: rgba(160, 107, 255, 0.8); }
 .arch-label-dim { fill: var(--faint); }
 
@@ -1439,7 +1440,7 @@ button {
 }
 
 .footer-col nav a:hover {
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 .footer-dead {

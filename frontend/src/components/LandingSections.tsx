@@ -118,9 +118,9 @@ export function LandingSections() {
             </text>
 
             {/* engine → venues */}
-            <line x1="388" y1="130" x2="210" y2="216" className="arch-line arch-line-cyan" />
+            <line x1="388" y1="130" x2="210" y2="216" className="arch-line arch-line-green" />
             <line x1="412" y1="130" x2="590" y2="216" className="arch-line arch-line-violet" />
-            <text x="266" y="178" className="arch-label arch-label-cyan">
+            <text x="266" y="178" className="arch-label arch-label-green">
               buyShares()
             </text>
             <text x="534" y="178" className="arch-label arch-label-violet">
@@ -128,7 +128,7 @@ export function LandingSections() {
             </text>
 
             {/* venue boxes */}
-            <rect x="110" y="220" width="200" height="44" className="arch-box arch-box-cyan" />
+            <rect x="110" y="220" width="200" height="44" className="arch-box arch-box-green" />
             <text x="210" y="240" className="arch-text">
               OUTCOME VENUE
             </text>
