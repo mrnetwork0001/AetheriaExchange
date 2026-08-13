@@ -68,6 +68,19 @@ drafter/resolver machinery also runs an **RWA category** - daily
 machine-resolvable markets on tokenized real-world-asset sector metrics
 (total RWA TVL per DefiLlama).
 
+**EQUITY markets** close the loop with X Layer's biggest RWA story: xStocks
+(tokenized equities) do the majority of their trading volume on X Layer, so
+an outcome bet on "TSLA closes above $330 on 2026-08-13 (Nasdaq official
+close)" is hedgeable with **wTSLAx on the same chain**. The co-pilot pairs
+the two legs; the resolver settles from the official close. That makes the
+AI trade real-world assets, not just markets about them.
+
+The USD leg is Circle's **native USDC** (X Layer replaced bridged USDC on
+2026-08-07). Every token address in `frontend/src/lib/tokens.ts` was verified
+by reading `symbol()`/`name()`/`decimals()` from the X Layer RPC - the
+bridged and native USDC contracts both report the symbol "USDC" and differ
+only by address and `name()`, so symbol matching alone is unsafe.
+
 The AI is visible, not just claimed:
 
 - **AGENT OPS console** (`?tab=agents`) - a live terminal where every agent
@@ -277,7 +290,13 @@ structured outputs / 0G Compute · 0G Storage TS SDK · OKX DEX aggregator API.
 ## The Launch Grant volume thesis
 
 Outcome bets create conviction; conviction wants a hedge. Every position the
-co-pilot builds can carry a correlated OKX DEX leg. Per the hackathon FAQ,
+co-pilot builds can carry an OKX DEX leg - and it is a real hedge, not a
+correlated double-down: the leg always moves **opposite** to the bet's
+payoff. A YES bet on "TSLA closes above $330" profits when TSLA rises, so
+its hedge sells wTSLAx; a NO bet buys it. Same-direction pairings are called
+correlated positions, never hedges, and the pairing (company and direction)
+is enforced server-side rather than trusted to the model. Per the hackathon
+FAQ,
 only swaps executed **through the OKX DEX interface** count toward Launch
 Grant volume (API-executed swaps are excluded) - so the ticket routes hedges
 to a prefilled OKX DEX interface deep link as the primary path.
@@ -315,6 +334,16 @@ economically motivated flow - the only kind the rules count.
 - WalletConnect support for mobile wallets alongside injected discovery
 
 **Venue depth**
+- **Yield-bearing pools ("no-loss markets")**: park idle parimutuel float in
+  a fixed-yield position - Pendle went live on X Layer on 2026-08-11 - so a
+  market's own liquidity earns while it waits for resolution, funding a
+  no-loss mode where losers recover principal and the yield forms the prize.
+  Needs a vault extension to `OutcomeMarket` plus a matured-PT settlement
+  path; DefiLlama does not yet index Pendle on X Layer, so the metric side
+  waits on data availability.
+- **More xStocks coverage**: additional tokenized equities as they list on
+  X Layer, and scalar equity markets (close-price ranges) rather than binary
+  thresholds
 - **Scalar PULSE pools**: bucketed range markets ("predict the number") as a
   multi-outcome parimutuel evolution of the current contract
 - Decentralized resolution: migrate the resolver's adapters to oracle feeds

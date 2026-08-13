@@ -64,6 +64,20 @@ And the AI is **visible, not claimed**:
 - **RWA category**: alongside PULSE, the drafter/resolver pair runs daily
   machine-resolvable markets on tokenized real-world-asset sector metrics
   (total RWA TVL per DefiLlama).
+- **EQUITY markets + xStocks hedges**: X Layer carries the majority of
+  xStocks (tokenized equity) volume, so Aetheria runs outcome markets on the
+  underlying stock's official close - "TSLA closes above $330 on 2026-08-13"
+  - and the co-pilot pairs a YES bet with a **wTSLAx** purchase on the OKX
+  DEX interface. The AI trades real-world assets, not only markets about
+  them. The resolver settles from the underlying's published daily close
+  (Yahoo Finance) and refuses to settle on an in-progress session, on a
+  session other than the one the question names, or when the reading sits
+  inside a dispute band.
+- **Native USDC**: the USD leg is Circle's native USDC
+  (`0xB6CEceAB302E2E4948951eE7843FC24E92933061`), which X Layer adopted on
+  2026-08-07. Both the bridged and native contracts report the symbol "USDC",
+  so every token address in the app was verified by on-chain
+  `symbol()`/`name()`/`decimals()` reads rather than symbol matching.
 
 **AI infrastructure**: the intent and odds engines run on a provider
 abstraction - Anthropic (schema-guaranteed structured outputs) or
@@ -71,6 +85,11 @@ abstraction - Anthropic (schema-guaranteed structured outputs) or
 selected per environment. Decentralized AI serving an X Layer-native venue.
 
 ## How it generates real OKX DEX volume (Launch Grant thesis)
+
+A hedge here is economically real, not a correlated double-down: the DEX leg
+always moves opposite to the outcome bet's payoff (YES on "TSLA above $330"
+sells wTSLAx; NO buys it), and the company/direction pairing is enforced
+server-side, not trusted to the model.
 
 Outcome bets create conviction; conviction wants a hedge. Every position the
 co-pilot builds can carry a correlated OKX DEX leg (e.g. 5 OKB YES on an
