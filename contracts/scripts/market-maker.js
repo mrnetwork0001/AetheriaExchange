@@ -29,6 +29,9 @@
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
+const { opsReporter } = require("./lib/ops");
+
+const ops = opsReporter("market-maker");
 
 const CONFIG_PATH = path.join(
   __dirname,
@@ -64,6 +67,8 @@ async function fairYesProb(title) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title }),
+      // A hung odds endpoint must never stall the trading loop.
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return null;
     const j = await res.json();
@@ -111,6 +116,7 @@ async function stakeIfAffordable(venue, wallet, state, marketId, isYes, amount) 
   state.spent += amount;
   await tx.wait();
   log(`market #${marketId} ← ${fmt(amount)} ${isYes ? "YES" : "NO"} (${tx.hash})`);
+  ops(`stake ${isYes ? "YES" : "NO"}`, `market #${marketId} ← ${fmt(amount)} · depth provision`);
 }
 
 async function main() {
@@ -127,7 +133,9 @@ async function main() {
   const state = { spent: 0n };
   log(`agent online · venue ${address} · chain ${chainId}`);
   log(`bot ${wallet.address} · budget ${fmt(BUDGET)}`);
+  ops("online", `chain ${chainId} · budget ${fmt(BUDGET)}`);
 
+  let pass = 0;
   while (!stopping) {
     let count = 0;
     try {
@@ -157,6 +165,16 @@ async function main() {
         // double the per-market spend. minShare >= 20% (p is clamped), so
         // totalSeed is bounded by MIN_SIDE * 5.
         if (yes === 0n && no === 0n) {
+          // Affordability first, AI second: the odds call bills the metered
+          // inference endpoint, so never ask for odds on a bootstrap the
+          // budget or wallet can't fund anyway. Minimum possible bootstrap
+          // is the p=0.5 case: max(SEED, MIN_SIDE) per side.
+          const minTotal =
+            (SEED > MIN_SIDE ? SEED : MIN_SIDE) * 2n;
+          if (BUDGET - state.spent < minTotal) continue;
+          const balance = await hre.ethers.provider.getBalance(wallet.address);
+          if (balance < minTotal + GAS_RESERVE) continue;
+
           const p = (await fairYesProb(m.title)) ?? 0.5;
           const pPct = BigInt(Math.round(p * 100));
           const minSharePct = pPct < 50n ? pPct : 100n - pPct;
@@ -165,7 +183,10 @@ async function main() {
           if (BUDGET - state.spent < totalSeed) continue;
           const seedYes = (totalSeed * pPct) / 100n;
           const seedNo = totalSeed - seedYes;
-          if (p !== 0.5) log(`market #${id}: AI fair odds ${(p * 100).toFixed(0)}% YES`);
+          if (p !== 0.5) {
+            log(`market #${id}: AI fair odds ${(p * 100).toFixed(0)}% YES`);
+            ops("ai fair odds", `market #${id} → ${(p * 100).toFixed(0)}% YES · seeding at AI ratio`);
+          }
           await stakeIfAffordable(venue, wallet, state, id, true, seedYes);
           await stakeIfAffordable(venue, wallet, state, id, false, seedNo);
           continue;
@@ -193,15 +214,24 @@ async function main() {
 
     if (state.spent >= BUDGET) {
       log(`budget exhausted (${fmt(state.spent)}) - agent going idle`);
+      ops("idle", `budget exhausted · ${fmt(state.spent)} deployed`);
       break;
     }
     if (stopping) break;
+
+    // Periodic heartbeat so the site's AGENT OPS console can show the bot
+    // as online between (rare) stakes - every 5th pass, not every pass, to
+    // keep the feed readable.
+    if (++pass % 5 === 0) {
+      ops("watch", `book scan · ${count} market(s) · ${fmt(state.spent)} of ${fmt(BUDGET)} deployed`);
+    }
 
     // Jitter so the cadence reads as organic on the activity feed.
     await sleep(INTERVAL_MS + Math.floor(Math.random() * INTERVAL_MS * 0.5));
   }
 
   log(`agent offline · total deployed ${fmt(state.spent)}`);
+  ops("offline", `total deployed ${fmt(state.spent)}`);
 }
 
 main().catch((err) => {

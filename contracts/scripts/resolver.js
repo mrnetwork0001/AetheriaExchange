@@ -22,6 +22,9 @@
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
+const { opsReporter } = require("./lib/ops");
+
+const ops = opsReporter("resolver");
 
 const CONFIG_PATH = path.join(
   __dirname,
@@ -35,6 +38,11 @@ const CONFIG_PATH = path.join(
 
 const DRY_RUN = process.env.RESOLVER_DRY_RUN === "1";
 const MAX_STALENESS_SEC = Number(process.env.RESOLVER_MAX_STALENESS_SEC ?? 2 * 3600);
+// Readings within this fraction of the threshold go to the manual queue:
+// our adapters approximate the cited source (aggregation differences,
+// timing), so the dispute zone must never auto-settle. resolveMarket is
+// final.
+const SETTLE_MARGIN = Number(process.env.RESOLVER_SETTLE_MARGIN ?? "0.01");
 
 // Titles whose comparator isn't a plain "above X" are never auto-settled -
 // the settlement logic below hardcodes value > threshold.
@@ -71,8 +79,12 @@ function parseThreshold(title) {
 // the same unit the title's threshold uses.
 const ADAPTERS = [
   {
-    name: "OKB 24h volume (USD, CoinGecko)",
-    match: /(okb[\s\S]*volume|volume[\s\S]*okb)/i,
+    // CoinGecko total_volume spans ALL venues (CEX-dominated). Titles that
+    // say "DEX volume" mean a different, smaller number - the negative
+    // lookahead sends them to the manual queue instead of settling them
+    // against the wrong metric.
+    name: "OKB 24h volume (USD, all venues, CoinGecko)",
+    match: /^(?![\s\S]*\bdex\b)(?=[\s\S]*\bokb\b)(?=[\s\S]*volume)/i,
     fetch: async () => {
       const res = await fetch(
         "https://api.coingecko.com/api/v3/coins/okb?localization=false&tickers=false&community_data=false&developer_data=false"
@@ -101,7 +113,30 @@ const ADAPTERS = [
       return v;
     },
   },
+  {
+    // RWA category markets: total TVL across protocols DefiLlama classifies
+    // as "RWA". Matches ONLY titles that name all three of RWA, TVL, and
+    // DefiLlama - narrower metrics (tokenized-treasury AUM, single-protocol
+    // TVL) must go to the manual queue, not settle against the sector sum.
+    name: "RWA sector TVL (USD, DefiLlama)",
+    match: /^(?=[\s\S]*\brwa\b)(?=[\s\S]*\btvl\b)(?=[\s\S]*defi\s*llama)/i,
+    fetch: async () => {
+      const res = await fetch("https://api.llama.fi/protocols");
+      if (!res.ok) throw new Error(`defillama ${res.status}`);
+      const j = await res.json();
+      if (!Array.isArray(j)) throw new Error("unexpected protocols response");
+      const v = j
+        .filter((p) => p?.category === "RWA")
+        .reduce((sum, p) => sum + (Number(p?.tvl) || 0), 0);
+      if (!(v > 0)) throw new Error("no RWA TVL in response");
+      return v;
+    },
+  },
 ];
+
+// Categories the agents author machine-resolvable questions for. Everything
+// else always goes to the manual queue.
+const AUTO_CATEGORIES = new Set(["PULSE", "RWA"]);
 
 async function main() {
   const chainId = String(hre.network.config.chainId);
@@ -126,6 +161,7 @@ async function main() {
 
   log(`agent online · venue ${address}${DRY_RUN ? " · DRY RUN" : ""}`);
   log(`trusted creators: ${[...allowedCreators].join(", ")}`);
+  ops("online", `settlement pass${DRY_RUN ? " · dry run" : ""}`);
 
   const now = Math.floor(Date.now() / 1000);
   const count = Number(await venue.marketCount());
@@ -143,7 +179,7 @@ async function main() {
       // else is listed for a human - the resolver never guesses, because
       // resolveMarket is final.
       const reasons = [];
-      if (m.category !== "PULSE") reasons.push("not a PULSE market");
+      if (!AUTO_CATEGORIES.has(m.category)) reasons.push("not a PULSE/RWA market");
       if (!allowedCreators.has(m.creator.toLowerCase()))
         reasons.push("creator not allowlisted");
       if (now - Number(m.endTime) > MAX_STALENESS_SEC)
@@ -164,6 +200,12 @@ async function main() {
 
       const adapter = matched[0];
       const value = await adapter.fetch();
+      if (Math.abs(value - threshold) <= threshold * SETTLE_MARGIN) {
+        manual.push(
+          `#${id} "${m.title}" (reading ${value.toLocaleString("en-US")} within ${(SETTLE_MARGIN * 100).toFixed(1)}% of threshold - too close to auto-settle)`
+        );
+        continue;
+      }
       const outcome = value > threshold;
       log(
         `#${id} "${m.title}" · ${adapter.name} = ${value.toLocaleString("en-US")} vs ${threshold.toLocaleString("en-US")} → ${outcome ? "YES" : "NO"}`
@@ -174,6 +216,7 @@ async function main() {
         await tx.wait();
         log(`#${id} resolved ${outcome ? "YES" : "NO"} (${tx.hash})`);
       }
+      ops(DRY_RUN ? "evaluated" : "settled", `market #${id} → ${outcome ? "YES" : "NO"} · ${adapter.name.split(" (")[0]} ${Math.round(value).toLocaleString("en-US")} vs ${threshold.toLocaleString("en-US")}`);
       resolved++;
     } catch (err) {
       log(`#${id} failed: ${err.shortMessage ?? err.message} - continuing`);
@@ -182,8 +225,10 @@ async function main() {
 
   if (manual.length > 0) {
     log(`needs manual resolution: ${manual.join(" · ")}`);
+    ops("manual queue", `${manual.length} ended market(s) flagged for human review - never guessing`);
   }
   log(`agent done · ${resolved} market(s) ${DRY_RUN ? "evaluated" : "resolved"}`);
+  ops("done", `${resolved} market(s) ${DRY_RUN ? "evaluated" : "settled"} this pass`);
 }
 
 main().catch((err) => {

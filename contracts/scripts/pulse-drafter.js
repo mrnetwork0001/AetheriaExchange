@@ -15,6 +15,9 @@
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
+const { opsReporter } = require("./lib/ops");
+
+const ops = opsReporter("pulse-drafter");
 
 const CONFIG_PATH = path.join(
   __dirname,
@@ -30,7 +33,8 @@ const API_URL = (process.env.AETHERIA_API_URL ?? "http://localhost:3003").replac
 
 const DEFAULT_TOPICS = [
   "today's X Layer pulse market on daily active wallets",
-  "today's X Layer pulse market on OKB 24h trading volume in USD",
+  "today's X Layer pulse market on OKB 24h trading volume in USD across all venues, per CoinGecko",
+  "today's RWA market on total tokenized real-world-asset (RWA) TVL in USD across DeFi, per DefiLlama - category RWA",
 ];
 
 // Pulse markets are short-dated by definition.
@@ -87,6 +91,7 @@ async function main() {
     .filter(Boolean);
 
   log(`agent online · venue ${address} · ${topics.length} topic(s) · signer ${signer.address}`);
+  ops("online", `drafting pass · ${topics.length} topic(s)`);
 
   const now = Math.floor(Date.now() / 1000);
   let created = 0;
@@ -104,19 +109,31 @@ async function main() {
 
       let endEpoch = Math.floor(Date.parse(draft.endTimeIso) / 1000);
       if (!Number.isFinite(endEpoch)) endEpoch = now + 24 * 3600;
-      endEpoch = Math.max(now + MIN_CLOSE_SEC, Math.min(endEpoch, now + MAX_CLOSE_SEC));
+      // Never clamp an out-of-window draft into the window: a "by Sep 12"
+      // question force-closed in 48h would settle early on the wrong
+      // horizon. Skip it instead - the wording and the close time must
+      // agree.
+      if (endEpoch < now + MIN_CLOSE_SEC || endEpoch > now + MAX_CLOSE_SEC) {
+        log(
+          `draft close ${draft.endTimeIso} outside the ${MIN_CLOSE_SEC / 3600}-${MAX_CLOSE_SEC / 3600}h window - skipping "${draft.title}"`
+        );
+        ops("skipped", `close horizon out of bounds · "${draft.title}"`);
+        continue;
+      }
 
       const tx = await venue.createMarket(draft.title, endEpoch, draft.category ?? "PULSE");
       await tx.wait();
       created++;
       openTitles.add(draft.title.toLowerCase());
       log(`deployed [${draft.category}] "${draft.title}" · closes ${new Date(endEpoch * 1000).toISOString()} · engine ${engine} (${tx.hash})`);
+      ops("deployed", `[${draft.category ?? "PULSE"}] "${draft.title}" · engine ${engine}`);
     } catch (err) {
       log(`topic "${topic}" failed: ${err.shortMessage ?? err.message} - continuing`);
     }
   }
 
   log(`agent done · ${created}/${topics.length} market(s) deployed`);
+  ops("done", `${created}/${topics.length} market(s) deployed this pass`);
 }
 
 main().catch((err) => {
