@@ -81,6 +81,11 @@ export function CopilotPanel({
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // Voice input via the browser's Web Speech API (feature-detected after
+  // mount so SSR and hydration render the same markup).
+  const [speechOk, setSpeechOk] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recRef = useRef<any>(null);
   // Messages restored from memory render instantly; only messages appended
   // this session animate.
   const [animateFrom, setAnimateFrom] = useState(1);
@@ -120,6 +125,49 @@ export function CopilotPanel({
   useEffect(() => {
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight });
   }, [messages, busy]);
+
+  useEffect(() => {
+    const w = window as any;
+    setSpeechOk(!!(w.SpeechRecognition ?? w.webkitSpeechRecognition));
+    return () => {
+      try {
+        recRef.current?.abort();
+      } catch {
+        /* recognition already gone */
+      }
+    };
+  }, []);
+
+  function toggleMic() {
+    if (listening) {
+      try {
+        recRef.current?.stop();
+      } catch {
+        setListening(false);
+      }
+      return;
+    }
+    const w = window as any;
+    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e: any) => {
+      const t = e.results?.[0]?.[0]?.transcript ?? "";
+      if (t) setInput((prev) => (prev ? `${prev} ${t}` : t));
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    setListening(true);
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  }
 
   function reset() {
     getMemoryStore()?.clear(chatKey);
@@ -281,11 +329,21 @@ export function CopilotPanel({
       <div className="copilot-input">
         <input
           value={input}
-          placeholder="ASK THE CO-PILOT_"
+          placeholder={listening ? "LISTENING…" : "ASK THE CO-PILOT_"}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           disabled={busy}
         />
+        {speechOk && (
+          <button
+            className={`mic-btn ${listening ? "listening" : ""}`}
+            onClick={toggleMic}
+            disabled={busy}
+            title={listening ? "Stop listening" : "Speak your trade"}
+          >
+            {listening ? "●" : "MIC"}
+          </button>
+        )}
         <button onClick={() => send()} disabled={busy || !input.trim()}>
           SEND
         </button>
