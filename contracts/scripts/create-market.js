@@ -8,6 +8,9 @@
 //   MARKET_TITLE      required - the YES/NO question
 //   MARKET_CATEGORY   default OTHER
 //   MARKET_HOURS      hours until close (default 24)
+//   MARKET_END_ISO    exact close time as an ISO timestamp; overrides
+//                     MARKET_HOURS. Use this for markets whose resolution is
+//                     tied to a specific session (e.g. an equity close).
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
@@ -35,7 +38,14 @@ async function main() {
   if (!address) throw new Error(`No venue deployed on chain ${chainId}`);
 
   const contract = await hre.ethers.getContractAt("OutcomeMarket", address);
-  const endTime = Math.floor(Date.now() / 1000) + Math.round(hours * 3600);
+  let endTime = Math.floor(Date.now() / 1000) + Math.round(hours * 3600);
+  if (process.env.MARKET_END_ISO) {
+    const exact = Math.floor(Date.parse(process.env.MARKET_END_ISO) / 1000);
+    if (!Number.isFinite(exact)) throw new Error("Bad MARKET_END_ISO");
+    if (exact <= Math.floor(Date.now() / 1000))
+      throw new Error("MARKET_END_ISO is in the past");
+    endTime = exact;
+  }
   const tx = await contract.createMarket(title, endTime, category);
   await tx.wait();
   const id = Number(await contract.marketCount()) - 1;

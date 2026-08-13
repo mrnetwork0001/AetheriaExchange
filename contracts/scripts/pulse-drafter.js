@@ -31,10 +31,50 @@ const CONFIG_PATH = path.join(
 
 const API_URL = (process.env.AETHERIA_API_URL ?? "http://localhost:3003").replace(/\/+$/, "");
 
+// US market holidays that fall on weekdays (NYSE/Nasdaq). Extend yearly -
+// an equity market drafted for a non-trading day can never settle, because
+// no session prints for it.
+const US_MARKET_HOLIDAYS = new Set([
+  "2026-01-01",
+  "2026-01-19",
+  "2026-02-16",
+  "2026-04-03",
+  "2026-05-25",
+  "2026-06-19",
+  "2026-07-03",
+  "2026-09-07",
+  "2026-11-26",
+  "2026-12-25",
+  "2027-01-01",
+  "2027-01-18",
+  "2027-02-15",
+  "2027-03-26",
+  "2027-05-31",
+  "2027-06-18",
+  "2027-07-05",
+  "2027-09-06",
+  "2027-11-25",
+  "2027-12-24",
+]);
+
+function isUsTradingDay(date = new Date()) {
+  const day = date.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  return !US_MARKET_HOLIDAYS.has(date.toISOString().slice(0, 10));
+}
+
+const EQUITY_TOPIC_RE = /\bEQUITY\b/;
+
 const DEFAULT_TOPICS = [
   "today's X Layer pulse market on daily active wallets",
   "today's X Layer pulse market on OKB 24h trading volume in USD across all venues, per CoinGecko",
   "today's RWA market on total tokenized real-world-asset (RWA) TVL in USD across DeFi, per DefiLlama - category RWA",
+  "today's PULSE market on X Layer total DeFi TVL in USD per DefiLlama",
+  "today's PULSE market on X Layer total stablecoin circulating supply in USD per DefiLlama",
+  // xStocks trade on X Layer, so an equity outcome bet is hedgeable with the
+  // tokenized share on the same chain.
+  "today's EQUITY market on whether TSLA closes above a specific price at today's Nasdaq official close - name today's date in the question and close the market at 22:30 UTC today (skip if today is not a US trading day)",
+  "today's EQUITY market on whether NVDA closes above a specific price at today's Nasdaq official close - name today's date in the question and close the market at 22:30 UTC today (skip if today is not a US trading day)",
 ];
 
 // Pulse markets are short-dated by definition.
@@ -85,10 +125,22 @@ async function main() {
     existing.filter((m) => m.status === 0).map((m) => m.title.toLowerCase())
   );
 
-  const topics = (process.env.DRAFTER_TOPICS ?? DEFAULT_TOPICS.join(";"))
+  let topics = (process.env.DRAFTER_TOPICS ?? DEFAULT_TOPICS.join(";"))
     .split(";")
     .map((t) => t.trim())
     .filter(Boolean);
+
+  // Equity questions resolve from a US session close, so they are only
+  // draftable on a trading day.
+  if (!isUsTradingDay()) {
+    const before = topics.length;
+    topics = topics.filter((t) => !EQUITY_TOPIC_RE.test(t));
+    if (topics.length < before) {
+      log(
+        `not a US trading day - skipping ${before - topics.length} equity topic(s)`
+      );
+    }
+  }
 
   log(`agent online · venue ${address} · ${topics.length} topic(s) · signer ${signer.address}`);
   ops("online", `drafting pass · ${topics.length} topic(s)`);

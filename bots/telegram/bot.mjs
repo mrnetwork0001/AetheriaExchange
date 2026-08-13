@@ -116,8 +116,11 @@ async function handleMessage(chatId, text) {
   let context = [];
   try {
     const { markets } = await fetchMarkets();
+    // Tradable only: an ended-but-unresolved market still reports status 0
+    // but rejects new stakes, and the co-pilot treats its context as live.
+    const nowSec = Math.floor(Date.now() / 1000);
     context = markets
-      .filter((m) => m.status === 0)
+      .filter((m) => m.status === 0 && m.endTime > nowSec)
       .map((m) => ({
         id: m.id,
         title: m.title,

@@ -25,6 +25,11 @@ const DEMO_MARKETS = [
   { title: "OKB 24h trading volume above $45M today per CoinGecko", category: "PULSE", days: 1 },
   // RWA: tokenized real-world-asset sector metrics (resolved from DefiLlama)
   { title: "RWA protocols total TVL above $27.5 billion on DefiLlama today", category: "RWA", days: 1 },
+  // EQUITY: tokenized-equity markets, hedgeable with xStocks on X Layer.
+  // Equity questions name the exact session and close AFTER it prints (the
+  // resolver only settles a reading whose session date matches the market's
+  // close date), so these are created by create-market.js with an explicit
+  // MARKET_END_ISO rather than seeded on a relative day offset.
 ];
 
 async function main() {
