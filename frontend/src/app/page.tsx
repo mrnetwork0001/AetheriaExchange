@@ -13,6 +13,7 @@ import { MarketDetailModal } from "@/components/MarketDetailModal";
 import { PositionsPanel } from "@/components/PositionsPanel";
 import { StatFooter } from "@/components/StatFooter";
 import { useActivity } from "@/hooks/useActivity";
+import { useNow } from "@/hooks/useNow";
 import { useMarkets } from "@/hooks/useMarkets";
 import { usePositions } from "@/hooks/usePositions";
 import type { Market } from "@/lib/contract";
@@ -27,6 +28,25 @@ function isoToLocalInput(iso: string): string {
 }
 
 type Tab = "markets" | "positions" | "agents";
+type StatusFilter = "LIVE" | "CLOSED" | "ALL";
+
+const PAGE_SIZE = 24;
+
+// Live markets first and closing soonest first - the tradeable ones are the
+// point of the page. Closed markets sort most-recently-closed first so the
+// latest settlements are what a visitor sees when they look.
+function isTradable(m: Market, now: number | null): boolean {
+  return m.status === 0 && (now === null || m.endTime > now);
+}
+
+function sortForDisplay(markets: Market[], now: number | null): Market[] {
+  return [...markets].sort((a, b) => {
+    const aLive = isTradable(a, now);
+    const bLive = isTradable(b, now);
+    if (aLive !== bLive) return aLive ? -1 : 1;
+    return aLive ? a.endTime - b.endTime : b.endTime - a.endTime;
+  });
+}
 
 export default function Home() {
   const { markets, live, loading, refetch } = useMarkets();
@@ -40,6 +60,9 @@ export default function Home() {
   );
 
   const [tab, setTab] = useState<Tab>("markets");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("LIVE");
+  const [page, setPage] = useState(0);
+  const now = useNow();
   const ops = useAgentOps();
   // Co-pilot visibility, persisted per browser. Defaults open (it's the
   // product's identity); starts open on the server render and applies the
@@ -100,10 +123,39 @@ export default function Home() {
   // A previously-selected category can vanish (markets refetched) - fall
   // back to ALL rather than stranding the user on an empty list.
   const effectiveCategory = categories.includes(category) ? category : "ALL";
-  const visibleMarkets =
-    effectiveCategory === "ALL"
-      ? markets
-      : markets.filter((m) => m.category === effectiveCategory);
+  const liveCount = useMemo(
+    () => markets.filter((m) => isTradable(m, now)).length,
+    [markets, now]
+  );
+  const closedCount = markets.length - liveCount;
+
+  const filteredMarkets = useMemo(() => {
+    const byCategory =
+      effectiveCategory === "ALL"
+        ? markets
+        : markets.filter((m) => m.category === effectiveCategory);
+    const byStatus =
+      statusFilter === "ALL"
+        ? byCategory
+        : byCategory.filter((m) =>
+            statusFilter === "LIVE" ? isTradable(m, now) : !isTradable(m, now)
+          );
+    return sortForDisplay(byStatus, now);
+  }, [markets, effectiveCategory, statusFilter, now]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredMarkets.length / PAGE_SIZE));
+  // Filters can shrink the list under the current page - clamp rather than
+  // stranding the user on an empty page.
+  const currentPage = Math.min(page, pageCount - 1);
+  const visibleMarkets = filteredMarkets.slice(
+    currentPage * PAGE_SIZE,
+    currentPage * PAGE_SIZE + PAGE_SIZE
+  );
+
+  function changeFilters(fn: () => void) {
+    fn();
+    setPage(0);
+  }
 
   function tradeFromCard(market: Market, isYes: boolean) {
     setDetailId(null);
@@ -191,19 +243,39 @@ export default function Home() {
 
           {tab === "markets" ? (
             <>
-              {categories.length > 2 && (
-                <div className="chip-row" style={{ marginBottom: 14 }}>
-                  {categories.map((c) => (
+              <div className="filter-bar">
+                {categories.length > 2 && (
+                  <div className="chip-row">
+                    {categories.map((c) => (
+                      <button
+                        key={c}
+                        className={`chip ${effectiveCategory === c ? "active" : ""}`}
+                        onClick={() => changeFilters(() => setCategory(c))}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="chip-row status-chips">
+                  {(
+                    [
+                      ["LIVE", liveCount],
+                      ["CLOSED", closedCount],
+                      ["ALL", markets.length],
+                    ] as [StatusFilter, number][]
+                  ).map(([s, n]) => (
                     <button
-                      key={c}
-                      className={`chip ${effectiveCategory === c ? "active" : ""}`}
-                      onClick={() => setCategory(c)}
+                      key={s}
+                      className={`chip ${statusFilter === s ? "active" : ""}`}
+                      onClick={() => changeFilters(() => setStatusFilter(s))}
                     >
-                      {c}
+                      {s}
+                      {n > 0 ? ` · ${n}` : ""}
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
 
               <div className="markets-grid">
                 {loading
@@ -221,10 +293,35 @@ export default function Home() {
                     ))}
                 {!loading && visibleMarkets.length === 0 && (
                   <p className="empty-note">
-                    NO MARKETS IN THIS CATEGORY - DEPLOY ONE.
+                    {statusFilter === "CLOSED"
+                      ? "NO CLOSED MARKETS HERE YET."
+                      : "NO MARKETS IN THIS VIEW - DEPLOY ONE."}
                   </p>
                 )}
               </div>
+
+              {!loading && pageCount > 1 && (
+                <div className="pager">
+                  <button
+                    className="chip"
+                    disabled={currentPage === 0}
+                    onClick={() => setPage(currentPage - 1)}
+                  >
+                    ← PREV
+                  </button>
+                  <span className="pager-info">
+                    PAGE {currentPage + 1} / {pageCount} ·{" "}
+                    {filteredMarkets.length} MARKETS
+                  </span>
+                  <button
+                    className="chip"
+                    disabled={currentPage >= pageCount - 1}
+                    onClick={() => setPage(currentPage + 1)}
+                  >
+                    NEXT →
+                  </button>
+                </div>
+              )}
             </>
           ) : tab === "positions" ? (
             <PositionsPanel

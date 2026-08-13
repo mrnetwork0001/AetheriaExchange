@@ -1876,6 +1876,52 @@ button {
   box-shadow: 0 0 32px rgba(160, 107, 255, 0.55);
 }
 
+/* market filters + pagination */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.status-chips {
+  margin-left: auto;
+}
+
+.status-chips .chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.pager-info {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+}
+
+.pager .chip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pager .chip:disabled:hover {
+  color: var(--dim);
+  border-color: var(--line);
+}
+
 /* scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
