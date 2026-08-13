@@ -68,14 +68,37 @@ function outcomeQuote(intent: AppIntent, markets: Market[]): string | null {
   }
 }
 
+// Feather-style microphone glyph - inline so no asset request.
+function MicIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+    </svg>
+  );
+}
+
 export function CopilotPanel({
   markets,
   onExecute,
   onDraft,
+  onClose,
 }: {
   markets: Market[];
   onExecute: (intent: AppIntent) => void;
   onDraft: (draft: MarketDraft) => void;
+  onClose?: () => void;
 }) {
   const { address } = useAccount();
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
@@ -86,6 +109,10 @@ export function CopilotPanel({
   const [speechOk, setSpeechOk] = useState(false);
   const [listening, setListening] = useState(false);
   const recRef = useRef<any>(null);
+  // Input text as it was when the mic started - recognition events carry the
+  // WHOLE transcript-so-far each time, so the handler must always rebuild
+  // base + transcript, never append.
+  const micBaseRef = useRef("");
   // Messages restored from memory render instantly; only messages appended
   // this session animate.
   const [animateFrom, setAnimateFrom] = useState(1);
@@ -150,13 +177,22 @@ export function CopilotPanel({
     const w = window as any;
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!SR) return;
+    micBaseRef.current = input.trim();
     const rec = new SR();
     rec.lang = "en-US";
-    rec.interimResults = false;
+    rec.continuous = false;
+    rec.interimResults = true;
     rec.maxAlternatives = 1;
     rec.onresult = (e: any) => {
-      const t = e.results?.[0]?.[0]?.transcript ?? "";
-      if (t) setInput((prev) => (prev ? `${prev} ${t}` : t));
+      // Rebuild the full transcript from every result (final + interim) -
+      // events are cumulative snapshots, so replacing is correct and
+      // appending would duplicate every prefix.
+      let t = "";
+      for (let i = 0; i < e.results.length; i++) {
+        t += e.results[i]?.[0]?.transcript ?? "";
+      }
+      t = t.trim();
+      setInput(micBaseRef.current ? `${micBaseRef.current} ${t}` : t);
     };
     rec.onend = () => setListening(false);
     rec.onerror = () => setListening(false);
@@ -235,6 +271,15 @@ export function CopilotPanel({
             </button>
           )}
           <span className="copilot-dot" />
+          {onClose && (
+            <button
+              className="copilot-close"
+              onClick={onClose}
+              title="Hide the co-pilot (reopen with ASK AI)"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
@@ -340,8 +385,17 @@ export function CopilotPanel({
             onClick={toggleMic}
             disabled={busy}
             title={listening ? "Stop listening" : "Speak your trade"}
+            aria-label={listening ? "Stop listening" : "Speak your trade"}
           >
-            {listening ? "●" : "MIC"}
+            {listening ? (
+              <span className="mic-eq" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+            ) : (
+              <MicIcon />
+            )}
           </button>
         )}
         <button onClick={() => send()} disabled={busy || !input.trim()}>
