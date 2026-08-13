@@ -10,7 +10,7 @@ import {
 } from "wagmi";
 import { contractAddress, outcomeMarketAbi } from "@/lib/contract";
 
-const CATEGORIES = ["CRYPTO", "MACRO", "SPORTS", "WEB3", "PULSE", "RWA", "OTHER"];
+const CATEGORIES = ["CRYPTO", "MACRO", "SPORTS", "WEB3", "PULSE", "RWA", "EQUITY", "OTHER"];
 
 type SubmitState =
   | { phase: "idle" }
