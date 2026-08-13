@@ -63,7 +63,21 @@ Built for the **X Layer AI Season Hackathon**. Submission details:
 **PULSE markets** are the venue's signature category: short-dated (usually
 24h) markets on X Layer's own public metrics - daily active wallets, OKB DEX
 volume - drafted daily by the AI, seeded by the market maker, and settled by
-the resolver. The chain speculating on itself, on a loop.
+the resolver. The chain speculating on itself, on a loop. The same
+drafter/resolver machinery also runs an **RWA category** - daily
+machine-resolvable markets on tokenized real-world-asset sector metrics
+(total RWA TVL per DefiLlama).
+
+The AI is visible, not just claimed:
+
+- **AGENT OPS console** (`?tab=agents`) - a live terminal where every agent
+  posts every decision, with per-agent online status and a "N/4 AGENTS
+  ONLINE" indicator in the header.
+- **AI fair value** on every open market's detail view - the odds engine's
+  calibrated probability, its written rationale, and the edge vs the
+  market's implied odds.
+- **Voice input** - the co-pilot takes spoken instructions via the browser's
+  Web Speech API (MIC button; feature-detected).
 
 ## The four AI agents
 
@@ -135,6 +149,7 @@ trade.
 | Variable | Required | Purpose |
 |---|---|---|
 | `AI_PROVIDER` | no | `anthropic` or `0g`; auto-picks by which key is set |
+| `AGENT_LOG_SECRET` | on public hosts | required from agents posting to `/api/agent-log`; unset = open posting (local dev only) |
 | `ANTHROPIC_API_KEY` | one provider | Claude with schema-guaranteed structured outputs |
 | `ZG_COMPUTE_BASE_URL` | one provider | 0G Compute router, e.g. `https://router-api.0g.ai/v1` |
 | `ZG_COMPUTE_API_KEY` | with 0G | from the 0G Compute dashboard |
@@ -150,6 +165,7 @@ trade.
 | `PRIVATE_KEY` | to deploy | deployer / venue owner / resolver signer |
 | `MM_PRIVATE_KEY` | recommended | dedicated market-maker wallet (falls back to `PRIVATE_KEY`) |
 | `AETHERIA_API_URL` | for agents | frontend base URL (default `http://localhost:3000`) |
+| `AGENT_LOG_SECRET` | on public hosts | shared secret for posting to the AGENT OPS feed; must match the frontend's value |
 | `MM_BUDGET_OKB` etc. | no | agent knobs - see script headers |
 | `DRAFTER_TOPICS` | no | semicolon-separated PULSE topics |
 | `RESOLVER_ALLOWED_CREATORS` / `RESOLVER_MAX_STALENESS_SEC` / `RESOLVER_DRY_RUN` | no | settlement guards |
@@ -183,7 +199,11 @@ npm run resolve:testnet     # resolver - run hourly (cron)
 
 Operational notes that matter:
 
-- **The resolver never guesses.** It only auto-settles PULSE markets from
+- **The agents report what they do.** Each agent posts its decisions to the
+  site's `/api/agent-log` (the AGENT OPS console). Set `AGENT_LOG_SECRET` on
+  both sides when the frontend is public. Reporting is fire-and-forget - an
+  unreachable frontend never blocks trading, drafting, or settlement.
+- **The resolver never guesses.** It only auto-settles PULSE/RWA markets from
   allowlisted creators with exactly one unambiguous metric adapter, a plain
   "above X" comparator, a parseable threshold, and a fresh close (staleness
   bound). Everything else is printed for manual resolution. `resolveMarket`
@@ -204,6 +224,7 @@ Operational notes that matter:
 | `/api/markets` | GET | live on-chain market list (`?chainId=` optional) |
 | `/api/dex/swap` | POST | OKX aggregator swap tx + ERC-20 approval spender (server-side HMAC; keys never reach the client) |
 | `/api/memory` | GET/POST | encrypted memory blob sync to 0G Storage (rate-budgeted; `?probe=1` for availability) |
+| `/api/agent-log` | GET/POST | AGENT OPS feed - agents POST decisions (gated by `AGENT_LOG_SECRET`), the console polls GET (`?since=` cursor) |
 
 All AI routes degrade to labeled offline behavior when no provider is
 configured - they never fabricate trades on runtime errors.

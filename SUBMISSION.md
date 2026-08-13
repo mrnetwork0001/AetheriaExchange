@@ -45,8 +45,25 @@ markets:
   probability so fresh markets open near fair implied odds.
 - **Resolver agent (settles)**: `contracts/scripts/resolver.js` parses the
   drafter's machine-resolvable questions, fetches the metric from public
-  data, and settles ended PULSE markets onchain - flagging anything it can't
-  resolve mechanically for manual review rather than guessing.
+  data, and settles ended PULSE/RWA markets onchain - flagging anything it
+  can't resolve mechanically for manual review rather than guessing.
+
+And the AI is **visible, not claimed**:
+
+- **AGENT OPS console** (`?tab=agents`): a live terminal where every agent
+  posts every decision - liquidity seeded at AI fair odds, markets drafted,
+  settlements data-checked - with per-agent online status. Judges watch the
+  autonomous fleet operate the venue in real time.
+- **AI fair value on every market**: the detail view shows the odds engine's
+  calibrated YES probability next to the market's implied odds, with its
+  written rationale and the edge it sees ("AI 18% vs market 50% - sees value
+  on NO"). The same estimate the market maker seeds with, surfaced to the
+  trader.
+- **Voice trading**: the co-pilot takes spoken instructions (browser Web
+  Speech API) - say "bet two OKB YES on the Fed market and hedge it".
+- **RWA category**: alongside PULSE, the drafter/resolver pair runs daily
+  machine-resolvable markets on tokenized real-world-asset sector metrics
+  (total RWA TVL per DefiLlama).
 
 **AI infrastructure**: the intent and odds engines run on a provider
 abstraction - Anthropic (schema-guaranteed structured outputs) or
@@ -80,7 +97,11 @@ count.
    two-leg ticket with the non-custodial risk disclosure.
 3. Ask: *"create a market about &lt;any headline&gt;"* → OPEN DEPLOY TICKET →
    the AI-drafted market is prefilled for permissionless deployment.
-4. On testnet with OKX Wallet (chain 1952, faucet linked in the footer):
+   (Or tap MIC and speak the instruction.)
+4. Open any market → the **AI FAIR VALUE** box quotes the engine's
+   probability, rationale, and the edge vs the market's implied odds. Open
+   the **AGENT OPS** tab → the live console of the four-agent fleet.
+5. On testnet with OKX Wallet (chain 1952, faucet linked in the footer):
    place a real bet, watch the activity ticker, check MY POSITIONS, and - as
    the venue owner - resolve a market and claim.
 
