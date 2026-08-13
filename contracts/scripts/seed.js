@@ -22,7 +22,9 @@ const DEMO_MARKETS = [
   { title: "OKB sets a new all-time high in 2026", category: "CRYPTO", days: 60 },
   // PULSE: daily markets on X Layer's own metrics (resolved from public data)
   { title: "X Layer daily active wallets close above 50K today", category: "PULSE", days: 1 },
-  { title: "OKB 24h DEX volume finishes above $45M today", category: "PULSE", days: 1 },
+  { title: "OKB 24h trading volume above $45M today per CoinGecko", category: "PULSE", days: 1 },
+  // RWA: tokenized real-world-asset sector metrics (resolved from DefiLlama)
+  { title: "RWA protocols total TVL above $27.5 billion on DefiLlama today", category: "RWA", days: 1 },
 ];
 
 async function main() {
