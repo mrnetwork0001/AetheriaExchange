@@ -19,6 +19,19 @@ type AdminState =
   | { phase: "pending"; action: string }
   | { phase: "error"; reason: string };
 
+interface FairValue {
+  p: number;
+  rationale: string;
+  engine: string;
+}
+
+// One AI estimate per market per page load - reopening a detail view must
+// not re-bill the inference provider. Keyed by id AND title: ids are
+// per-venue indexes, so a chain/venue switch (or demo -> live) reuses ids
+// for entirely different questions.
+const fairCache = new Map<string, FairValue>();
+const fairKey = (m: Market) => `${m.id}|${m.title}`;
+
 export function MarketDetailModal({
   market,
   activity,
@@ -43,6 +56,8 @@ export function MarketDetailModal({
   const venue = contractAddress(chainId);
   const [copied, setCopied] = useState(false);
   const [admin, setAdmin] = useState<AdminState>({ phase: "idle" });
+  const [fair, setFair] = useState<FairValue | null>(null);
+  const [fairLoading, setFairLoading] = useState(false);
 
   const { data: owner } = useReadContract({
     abi: outcomeMarketAbi as any,
@@ -60,6 +75,55 @@ export function MarketDetailModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // AI fair value for open markets - the same odds engine the market maker
+  // seeds with, surfaced to the trader with its rationale.
+  useEffect(() => {
+    const key = fairKey(market);
+    setFair(fairCache.get(key) ?? null);
+    setFairLoading(false);
+    if (market.status !== 0 || market.endTime <= Math.floor(Date.now() / 1000))
+      return;
+    if (fairCache.has(key)) return;
+
+    let cancelled = false;
+    setFairLoading(true);
+    fetch("/api/ai/odds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: market.title, category: market.category }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (
+          !j ||
+          j.engine === "offline-fallback" ||
+          typeof j.yesProbability !== "number"
+        ) {
+          if (!cancelled) setFairLoading(false);
+          return;
+        }
+        const fv: FairValue = {
+          p: j.yesProbability,
+          rationale: String(j.rationale ?? ""),
+          engine: String(j.engine ?? ""),
+        };
+        // Cache even when the modal closed mid-flight - the inference is
+        // already paid for; only the state update is skipped.
+        fairCache.set(key, fv);
+        if (!cancelled) {
+          setFairLoading(false);
+          setFair(fv);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFairLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [market.id, market.title]);
 
   const total = market.yesPool + market.noPool;
   const yesPct = total === 0n ? 50 : Number((market.yesPool * 100n) / total);
@@ -165,6 +229,53 @@ export function MarketDetailModal({
             <div className="yes" style={{ width: `${yesPct}%` }} />
             <div className="no" style={{ width: `${100 - yesPct}%` }} />
           </div>
+
+          {!closed && (fairLoading || fair) && (
+            <div className="fair-box">
+              <div className="fair-head">
+                <span className="label" style={{ fontSize: 9 }}>
+                  AI FAIR VALUE
+                </span>
+                {fair && (
+                  <span className="fair-engine">
+                    {fair.engine.toUpperCase()}
+                  </span>
+                )}
+              </div>
+              {fairLoading ? (
+                <p className="fair-loading">ESTIMATING FAIR ODDS…</p>
+              ) : (
+                fair &&
+                (() => {
+                  const fairPct = Math.round(fair.p * 100);
+                  const delta = fairPct - yesPct;
+                  const verdict =
+                    Math.abs(delta) < 8
+                      ? { text: "IN LINE WITH MARKET", cls: "flat" }
+                      : delta > 0
+                        ? { text: `SEES VALUE ON YES · +${delta}PTS`, cls: "yes" }
+                        : { text: `SEES VALUE ON NO · ${delta}PTS`, cls: "no" };
+                  return (
+                    <>
+                      <div className="fair-row">
+                        <span className="fair-num">{fairPct}% YES</span>
+                        <span className="fair-vs">MARKET IMPLIES {yesPct}%</span>
+                        <span className={`fair-verdict ${verdict.cls}`}>
+                          {verdict.text}
+                        </span>
+                      </div>
+                      {fair.rationale && (
+                        <p className="fair-rationale">{fair.rationale}</p>
+                      )}
+                      <span className="fair-disclaimer">
+                        MODEL ESTIMATE - NOT FINANCIAL ADVICE
+                      </span>
+                    </>
+                  );
+                })()
+              )}
+            </div>
+          )}
 
           {!closed && (
             <div className="market-actions">
