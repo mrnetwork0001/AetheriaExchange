@@ -41,6 +41,26 @@ export default function Home() {
 
   const [tab, setTab] = useState<Tab>("markets");
   const ops = useAgentOps();
+  // Co-pilot visibility, persisted per browser. Defaults open (it's the
+  // product's identity); starts open on the server render and applies the
+  // stored preference after mount to avoid a hydration mismatch.
+  const [copilotOpen, setCopilotOpen] = useState(true);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("aetheria:copilot-open") === "0")
+        setCopilotOpen(false);
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  function toggleCopilot(open: boolean) {
+    setCopilotOpen(open);
+    try {
+      localStorage.setItem("aetheria:copilot-open", open ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+  }
   const [category, setCategory] = useState("ALL");
   const [activeIntent, setActiveIntent] = useState<AppIntent | null>(null);
   // Store only the id so the modal always renders fresh pools/status from
@@ -123,7 +143,10 @@ export default function Home() {
 
       <ActivityTicker items={activity} onSelect={openDetail} />
 
-      <div className="main" id="markets">
+      <div
+        className={`main ${copilotOpen ? "" : "copilot-closed"}`}
+        id="markets"
+      >
         <div>
           <div className="markets-head">
             <div className="tab-bar">
@@ -218,12 +241,26 @@ export default function Home() {
           )}
         </div>
 
-        <CopilotPanel
-          markets={markets}
-          onExecute={setActiveIntent}
-          onDraft={openDraftTicket}
-        />
+        {copilotOpen && (
+          <CopilotPanel
+            markets={markets}
+            onExecute={setActiveIntent}
+            onDraft={openDraftTicket}
+            onClose={() => toggleCopilot(false)}
+          />
+        )}
       </div>
+
+      {!copilotOpen && (
+        <button
+          className="copilot-fab"
+          onClick={() => toggleCopilot(true)}
+          title="Open the AI co-pilot"
+        >
+          <span className="copilot-dot" />
+          ASK AI
+        </button>
+      )}
 
       <LandingSections />
 
