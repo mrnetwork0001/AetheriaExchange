@@ -15,6 +15,7 @@ import { explorerTxUrl, SUPPORTED_CHAINS } from "@/lib/chains";
 import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
 import type { AppIntent } from "@/lib/intent";
 import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
+import { displaySymbol } from "@/lib/tokens";
 import { okxInterfaceUrl, prepareSwap } from "@/services/dexRouter";
 
 function payoutPreview(
@@ -74,14 +75,17 @@ function LegStatus({ state, chainId }: { state: LegState; chainId: number }) {
     case "skipped":
       return <span className="leg-status skipped">{state.reason}</span>;
     case "external":
+      // Opening the interface is not the same as executing there - the user
+      // still picks the amount and signs on OKX, so never imply it is done.
       return (
         <a
-          className="leg-status confirmed"
+          className="leg-status skipped"
           href={state.url}
           target="_blank"
           rel="noreferrer"
+          title="Set the amount and confirm the swap on OKX DEX"
         >
-          ON OKX DEX ↗
+          OPENED ON OKX - CONFIRM THERE ↗
         </a>
       );
   }
@@ -180,6 +184,10 @@ export function ExecutionModal({
           });
         } else if (!market || market.status !== 0) {
           setOutcomeState({ phase: "skipped", reason: "MARKET NOT OPEN" });
+        } else if (market.endTime <= Math.floor(Date.now() / 1000)) {
+          // buyShares reverts after endTime; a ticket restored from chat
+          // memory can easily outlive the market it was built for.
+          setOutcomeState({ phase: "skipped", reason: "TRADING HAS CLOSED" });
         } else {
           try {
             setOutcomeState({ phase: "pending" });
@@ -346,7 +354,8 @@ export function ExecutionModal({
               <div className="ticket-row">
                 <span className="k">Swap</span>
                 <span className="v">
-                  {dexTrade.amount} {dexTrade.tokenIn} → {dexTrade.tokenOut}
+                  {dexTrade.amount} {displaySymbol(dexTrade.tokenIn)} →{" "}
+                  {displaySymbol(dexTrade.tokenOut)}
                 </span>
               </div>
               <div className="ticket-row">
@@ -381,7 +390,7 @@ export function ExecutionModal({
 
           {done ? (
             <button className="approve-btn" onClick={onClose}>
-              DONE
+              {dexState.phase === "external" ? "CLOSE" : "DONE"}
             </button>
           ) : (
             <button className="approve-btn" onClick={execute} disabled={running}>

@@ -6,8 +6,12 @@ import type { DexTrade } from "@/lib/intent";
 // hackathon FAQ, only interface-executed swaps count toward Launch Grant
 // volume (API-executed swaps are excluded) - so this is the grant-eligible
 // path. The interface lists mainnet chains only; testnet sessions link to
-// the mainnet pair. Prefill params are best-effort: if OKX changes the URL
-// scheme the link still lands on the swap page.
+// the mainnet pair.
+//
+// The chain param MUST be the numeric EVM id (196). A non-numeric value is
+// silently discarded along with both token addresses, landing the user on a
+// populated swap for the WRONG chain - so this must never become a string
+// like "xlayer".
 export function okxInterfaceUrl(trade: DexTrade, chainId: number): string {
   const interfaceChain = chainId === 1952 ? 196 : chainId;
   const tokenIn = resolveToken(trade.tokenIn);
@@ -54,6 +58,16 @@ export async function prepareSwap(
   chainId: number,
   userWallet: string
 ): Promise<SwapPreparation> {
+  // The OKX aggregator serves mainnet chains only - the venue's testnet
+  // sessions must route via the interface link rather than fail mid-ticket.
+  if (chainId !== 196) {
+    return {
+      status: "unavailable",
+      reason:
+        "In-app routing is X Layer mainnet only - use the OKX DEX interface link for this leg.",
+    };
+  }
+
   const tokenIn = resolveToken(trade.tokenIn);
   if (!tokenIn) {
     return { status: "error", reason: `Unknown token ${trade.tokenIn}` };

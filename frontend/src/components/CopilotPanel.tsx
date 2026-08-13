@@ -11,6 +11,7 @@ import {
   type ChatMessage,
 } from "@/lib/memoryStore";
 import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
+import { displaySymbol } from "@/lib/tokens";
 
 const WELCOME: ChatMessage = {
   role: "copilot",
@@ -230,14 +231,21 @@ export function CopilotPanel({
           history: messages
             .slice(-8)
             .map((m) => ({ role: m.role, text: m.text })),
-          currentMarketContext: markets.map((m) => ({
-            id: m.id,
-            title: m.title,
-            category: m.category,
-            yesPoolOkb: formatEther(m.yesPool),
-            noPoolOkb: formatEther(m.noPool),
-            endTime: m.endTime,
-          })),
+          // Only tradable markets: a resolved or cancelled market can't take
+          // a bet, and leaving them in makes the co-pilot hesitate between
+          // same-titled live and dead entries.
+          currentMarketContext: markets
+            .filter(
+              (m) => m.status === 0 && m.endTime > Math.floor(Date.now() / 1000)
+            )
+            .map((m) => ({
+              id: m.id,
+              title: m.title,
+              category: m.category,
+              yesPoolOkb: formatEther(m.yesPool),
+              noPoolOkb: formatEther(m.noPool),
+              endTime: m.endTime,
+            })),
         }),
       });
       const intent: AppIntent = await res.json();
@@ -321,8 +329,9 @@ export function CopilotPanel({
                     {msg.intent.dexTrade && (
                       <div className="intent-leg">
                         LEG {msg.intent.outcomeTrade ? 2 : 1} · OKX DEX -{" "}
-                        {msg.intent.dexTrade.amount} {msg.intent.dexTrade.tokenIn}{" "}
-                        → {msg.intent.dexTrade.tokenOut}
+                        {msg.intent.dexTrade.amount}{" "}
+                        {displaySymbol(msg.intent.dexTrade.tokenIn)} →{" "}
+                        {displaySymbol(msg.intent.dexTrade.tokenOut)}
                       </div>
                     )}
                     <button
