@@ -2,8 +2,15 @@
 
 The reference for every Aetheria visual - app UI, fliers, banners, social
 assets, deck slides. The flier formula below is canon: **this is how Aetheria
-fliers look.** (Validated by the X banner generated 2026-08-13 - simple,
-professional, on-system.)
+fliers look.**
+
+Two layouts are approved and validated in production, and both come from the
+same formula - only the ghost texture differs:
+
+| Layout | Texture | Use for | Approved |
+|---|---|---|---|
+| **Banner** | orbit arc cropped off an edge | profile banners, covers, identity | 2026-08-13 |
+| **Announcement** | mono ticker line along the bottom | post images, feature and launch announcements | 2026-08-14 |
 
 ---
 
@@ -83,13 +90,56 @@ Adaptations:
   title slide". Formula stays identical.
 - **Other statements**: swap the two headline lines; keep the white/grey
   split and the green-dot period.
-- **Ticker-texture variant**: replace the texture element with: one line of
-  faint monospace uppercase text running the full width at the bottom edge,
-  8% opacity: "▲ 2.50 OKB YES · BTC TRADES ABOVE $150K   ＋ NEW MARKET · OKB
-  SETS A NEW ALL-TIME HIGH   ✓ RESOLVED YES".
+- **Ticker-texture variant**: see the announcement prompt below - it has its
+  own validated prompt rather than a note.
 - **Text-artifact fallback**: if generated type has artifacts after 2-3
   attempts, generate with no text at all (field + grid + arc only) and set
   the typography locally.
+
+## Canonical announcement prompt (ticker variant)
+
+The second approved layout, for post images rather than a profile banner.
+Identical formula, but the ghost texture is a line of terminal exhaust along
+the bottom edge instead of the orbit arc - it reads as "the agents are
+working", which suits announcement and feature posts. Approved 2026-08-14.
+
+Use the arc for identity pieces (banners, covers) and the ticker for posts
+about what the product is doing.
+
+```
+Generate an image: a 1600x900 (16:9) social image for AETHERIA EXCHANGE,
+using the brand system and flier formula you already know. Same restraint as
+the X banner: a near-black field, ONE statement, one subtle texture.
+
+Composition:
+- Background: flat matte near-black #060609 with a barely-visible 1px
+  blueprint grid (white at 3% opacity, ~44px spacing). No gradients, no glow
+  washes, no vignette.
+- Headline, centered, occupying the middle band with generous margins on all
+  four edges:
+  Line 1, pure white:   Our AI doesn't just trade the markets.
+  Line 2, grey #8b8b98: It writes and settles them.
+  Bold tight-tracked Helvetica-style sans, sentence case, generous line
+  spacing. Replace the final period of line 2 with a small glowing dot in
+  OKX green #7EE705 (soft glow, like a live-status indicator).
+- One texture element only: a single line of faint monospace UPPERCASE text
+  running the full width along the BOTTOM edge at 8% opacity, wide letter
+  spacing, in white - reading:
+  "DRAFTER · DEPLOYED TSLA CLOSES ABOVE $340    MAKER · SEEDED 51/49 AT AI FAIR ODDS    RESOLVER · SETTLED YES FROM PUBLIC DATA"
+  It should read as ambient terminal exhaust, not as a caption - barely
+  legible, never competing with the headline.
+
+Hard exclusions: no logo lockup, no letter A, no icons, no robots, no
+additional text, no 3D objects, no charts or candlesticks, no lens flares,
+no noise/grain, no purple gradients, no borders, no drop shadows. Flat,
+precise, quiet.
+```
+
+Reusing it: swap the two headline lines for whatever the post says, and
+rewrite the ticker line to match that subject - keep it as real agent or
+market output (an actual market title, real odds, a real settlement), never
+invented numbers dressed up as data. Sizes: 1600x900 for in-timeline posts,
+1080x1080 square, 1080x1350 portrait.
 
 ## Master ChatGPT brand context
 
