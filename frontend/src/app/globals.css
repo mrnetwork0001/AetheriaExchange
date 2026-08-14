@@ -263,6 +263,23 @@ button {
   font-size: 11px;
   color: var(--faint);
   letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Urgency is carried by colour so a closing market is obvious at a glance,
+   and the last five minutes pulse. */
+.market-countdown.urgent {
+  color: var(--label);
+}
+
+.market-countdown.critical {
+  color: var(--red);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.market-countdown.closed {
+  color: var(--faint);
 }
 
 .market-title {

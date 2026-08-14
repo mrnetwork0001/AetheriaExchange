@@ -2,16 +2,7 @@
 
 import { formatEther } from "viem";
 import type { Market } from "@/lib/contract";
-import { useNow } from "@/hooks/useNow";
-
-function countdown(endTime: number, now: number): string {
-  const secs = endTime - now;
-  if (secs <= 0) return "CLOSED";
-  const d = Math.floor(secs / 86400);
-  if (d > 0) return `T-${d}D ${Math.floor((secs % 86400) / 3600)}H`;
-  const h = Math.floor(secs / 3600);
-  return `T-${h}H ${Math.floor((secs % 3600) / 60)}M`;
-}
+import { useCountdown } from "@/hooks/useNow";
 
 export function MarketCard({
   market,
@@ -24,13 +15,12 @@ export function MarketCard({
   onTrade: (market: Market, isYes: boolean) => void;
   onOpen: (market: Market) => void;
 }) {
-  const now = useNow();
+  const countdown = useCountdown(market.endTime);
   const total = market.yesPool + market.noPool;
   const yesPct =
     total === 0n ? 50 : Number((market.yesPool * 100n) / total);
   const noPct = 100 - yesPct;
-  const closed =
-    market.status !== 0 || (now !== null && market.endTime <= now);
+  const closed = market.status !== 0 || countdown?.level === "closed";
   const poolOkb = Number(formatEther(total)).toFixed(2);
 
   return (
@@ -40,14 +30,16 @@ export function MarketCard({
     >
       <div className="market-meta">
         <span className="label">{market.category}</span>
-        <span className="market-countdown" suppressHydrationWarning>
+        <span
+          className={`market-countdown ${market.status === 0 ? (countdown?.level ?? "") : ""}`}
+          suppressHydrationWarning
+          title={`Trading closes ${new Date(market.endTime * 1000).toLocaleString()}`}
+        >
           {market.status === 1
             ? `RESOLVED ${market.outcome ? "YES" : "NO"}`
             : market.status === 2
               ? "CANCELLED"
-              : now === null
-                ? "T-"
-                : countdown(market.endTime, now)}
+              : (countdown?.text ?? "CLOSES IN …")}
         </span>
       </div>
 

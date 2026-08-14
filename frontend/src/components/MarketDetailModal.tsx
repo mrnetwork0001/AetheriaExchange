@@ -11,6 +11,7 @@ import {
 import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
 import { fmtOkb } from "@/lib/payout";
 import type { ActivityItem } from "@/hooks/useActivity";
+import { useCountdown } from "@/hooks/useNow";
 
 const STATUS_LABEL = ["LIVE", "RESOLVED", "CANCELLED"] as const;
 
@@ -58,6 +59,7 @@ export function MarketDetailModal({
   const [admin, setAdmin] = useState<AdminState>({ phase: "idle" });
   const [fair, setFair] = useState<FairValue | null>(null);
   const [fairLoading, setFairLoading] = useState(false);
+  const countdown = useCountdown(market.endTime);
 
   const { data: owner } = useReadContract({
     abi: outcomeMarketAbi as any,
@@ -218,6 +220,11 @@ export function MarketDetailModal({
               {tradingEnded ? "CLOSED" : "CLOSES"}{" "}
               {new Date(market.endTime * 1000).toLocaleString()}
             </span>
+            {market.status === 0 && countdown && countdown.level !== "closed" && (
+              <span className={`market-countdown ${countdown.level}`}>
+                {countdown.text}
+              </span>
+            )}
             <button className="chip" onClick={share}>
               {copied ? "LINK COPIED ✓" : "SHARE ↗"}
             </button>
