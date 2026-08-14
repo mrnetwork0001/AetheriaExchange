@@ -128,6 +128,10 @@ export function MarketDetailModal({
   const total = market.yesPool + market.noPool;
   const yesPct = total === 0n ? 50 : Number((market.yesPool * 100n) / total);
   const tradingEnded = market.endTime <= Math.floor(Date.now() / 1000);
+  // The contract cancels rather than resolves when the winning side is
+  // empty (winPool == 0), so a side with no stake can never be "the winner".
+  const noYesStake = market.yesPool === 0n;
+  const noNoStake = market.noPool === 0n;
   const closed = market.status !== 0 || tradingEnded;
   const bets = activity.filter(
     (a) => a.kind === "BET" && a.marketId === market.id
@@ -199,13 +203,20 @@ export function MarketDetailModal({
           <h2 className="detail-title">{market.title}</h2>
 
           <div className="detail-meta">
-            <span className={`pos-status ${market.status === 0 ? "open" : market.status === 1 ? "won" : "lost"}`}>
+            <span
+              className={`pos-status ${market.status !== 0 ? (market.status === 1 ? "won" : "lost") : tradingEnded ? "lost" : "open"}`}
+            >
               {market.status === 1
                 ? `RESOLVED ${market.outcome ? "YES" : "NO"}`
-                : STATUS_LABEL[market.status]}
+                : market.status === 2
+                  ? STATUS_LABEL[2]
+                  : tradingEnded
+                    ? "CLOSED · AWAITING RESOLUTION"
+                    : STATUS_LABEL[0]}
             </span>
             <span className="market-countdown">
-              CLOSES {new Date(market.endTime * 1000).toLocaleString()}
+              {tradingEnded ? "CLOSED" : "CLOSES"}{" "}
+              {new Date(market.endTime * 1000).toLocaleString()}
             </span>
             <button className="chip" onClick={share}>
               {copied ? "LINK COPIED ✓" : "SHARE ↗"}
@@ -321,17 +332,25 @@ export function MarketDetailModal({
                 RESOLVER CONTROLS
               </span>
               <div className="admin-actions">
-                {/* resolveMarket reverts until endTime; cancel is allowed early */}
+                {/* resolveMarket reverts until endTime; cancel is allowed
+                    early. A side with no stake cannot win: the contract
+                    treats winPool == 0 as one-sided and cancels instead of
+                    resolving, so those buttons are disabled rather than
+                    silently doing something else than their label says. */}
                 <button
                   className="btn-outcome btn-yes"
-                  disabled={admin.phase === "pending" || !tradingEnded}
+                  disabled={
+                    admin.phase === "pending" || !tradingEnded || noYesStake
+                  }
                   onClick={() => adminAction("resolveYes")}
                 >
                   RESOLVE YES
                 </button>
                 <button
                   className="btn-outcome btn-no"
-                  disabled={admin.phase === "pending" || !tradingEnded}
+                  disabled={
+                    admin.phase === "pending" || !tradingEnded || noNoStake
+                  }
                   onClick={() => adminAction("resolveNo")}
                 >
                   RESOLVE NO
@@ -347,6 +366,13 @@ export function MarketDetailModal({
               {!tradingEnded && (
                 <span className="leg-status skipped">
                   RESOLVABLE AFTER TRADING CLOSES
+                </span>
+              )}
+              {tradingEnded && (noYesStake || noNoStake) && (
+                <span className="leg-status skipped">
+                  {noYesStake && noNoStake
+                    ? "NOBODY STAKED THIS MARKET - IT CAN ONLY BE CANCELLED"
+                    : `NO STAKE ON ${noYesStake ? "YES" : "NO"} - THAT SIDE CANNOT WIN, SO RESOLVING IT WOULD CANCEL AND REFUND INSTEAD`}
                 </span>
               )}
               {admin.phase === "pending" && (
