@@ -34,6 +34,11 @@ contract OutcomeMarket {
 
     uint256 public constant FEE_BPS = 200; // 2% of the losing pool
     uint256 private constant BPS = 10_000;
+    // How long after trading closes the owner has to settle a market before
+    // anyone may cancel it and let stakers refund. Long enough to cover a
+    // weekend plus a manual review, short enough that funds are never locked
+    // indefinitely.
+    uint256 public constant RESOLUTION_GRACE = 7 days;
 
     address public owner;
     address public feeRecipient;
@@ -158,6 +163,28 @@ contract OutcomeMarket {
     function cancelMarket(uint256 marketId) external onlyOwner {
         Market storage m = _market(marketId);
         require(m.status == Status.Open, "already settled");
+        m.status = Status.Cancelled;
+        emit MarketCancelled(marketId);
+    }
+
+    /// @notice Permissionless escape hatch: once a market has been closed for
+    /// RESOLUTION_GRACE without being settled, ANYONE can cancel it so every
+    /// staker can withdraw.
+    /// @dev Without this, settlement depends entirely on the owner key.
+    /// A lost key, an abandoned deployment, or a market the resolver cannot
+    /// settle mechanically would leave stakes locked forever, since
+    /// claimPayout requires a non-Open status. This bounds that trust: the
+    /// operator has a grace period to settle honestly, after which users can
+    /// always recover their own funds. Cancelling only ever refunds - it
+    /// cannot move value between participants - so leaving it open to
+    /// everyone is safe.
+    function forceCancelStale(uint256 marketId) external {
+        Market storage m = _market(marketId);
+        require(m.status == Status.Open, "already settled");
+        require(
+            block.timestamp >= m.endTime + RESOLUTION_GRACE,
+            "grace period not elapsed"
+        );
         m.status = Status.Cancelled;
         emit MarketCancelled(marketId);
     }

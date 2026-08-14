@@ -133,4 +133,70 @@ describe("OutcomeMarket", function () {
       ethers.parseEther("10")
     );
   });
+
+  it("refuses to force-cancel before the grace period elapses", async function () {
+    const { market, alice, endTime } = await loadFixture(deployFixture);
+    await market.connect(alice).buyShares(0, true, { value: ethers.parseEther("1") });
+
+    // Still trading.
+    await expect(market.connect(alice).forceCancelStale(0)).to.be.revertedWith(
+      "grace period not elapsed"
+    );
+
+    // Closed, but the owner still has time to settle honestly.
+    await time.increaseTo(endTime + 1);
+    await expect(market.connect(alice).forceCancelStale(0)).to.be.revertedWith(
+      "grace period not elapsed"
+    );
+
+    const grace = await market.RESOLUTION_GRACE();
+    await time.increaseTo(endTime + Number(grace) - 60);
+    await expect(market.connect(alice).forceCancelStale(0)).to.be.revertedWith(
+      "grace period not elapsed"
+    );
+  });
+
+  it("lets anyone rescue stakes from a market the owner never settled", async function () {
+    const { market, alice, bob, carol, endTime } = await loadFixture(deployFixture);
+    await market.connect(alice).buyShares(0, true, { value: ethers.parseEther("3") });
+    await market.connect(bob).buyShares(0, false, { value: ethers.parseEther("2") });
+
+    const grace = await market.RESOLUTION_GRACE();
+    await time.increaseTo(endTime + Number(grace) + 1);
+
+    // Carol has no stake here - the escape hatch is open to anyone, because
+    // cancelling can only ever refund.
+    await expect(market.connect(carol).forceCancelStale(0))
+      .to.emit(market, "MarketCancelled")
+      .withArgs(0n);
+
+    await expect(market.connect(alice).claimPayout(0)).to.changeEtherBalance(
+      alice,
+      ethers.parseEther("3")
+    );
+    await expect(market.connect(bob).claimPayout(0)).to.changeEtherBalance(
+      bob,
+      ethers.parseEther("2")
+    );
+  });
+
+  it("cannot force-cancel a market that was already settled", async function () {
+    const { market, alice, bob, carol, endTime } = await loadFixture(deployFixture);
+    await market.connect(alice).buyShares(0, true, { value: ethers.parseEther("3") });
+    await market.connect(bob).buyShares(0, false, { value: ethers.parseEther("2") });
+
+    await time.increaseTo(endTime + 1);
+    await market.resolveMarket(0, true);
+
+    const grace = await market.RESOLUTION_GRACE();
+    await time.increaseTo(endTime + Number(grace) + 1);
+    await expect(
+      market.connect(carol).forceCancelStale(0)
+    ).to.be.revertedWith("already settled");
+
+    // The real outcome still stands: Alice won, Bob did not.
+    const m = await market.getMarket(0);
+    expect(Number(m.status)).to.equal(1);
+    expect(m.outcome).to.equal(true);
+  });
 });
