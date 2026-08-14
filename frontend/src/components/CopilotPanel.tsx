@@ -63,7 +63,7 @@ function outcomeQuote(intent: AppIntent, markets: Market[]): string | null {
       total === 0n
         ? 50
         : Number(((trade.isYes ? market.yesPool : market.noPool) * 100n) / total);
-    return `${pct}% IMPLIED · RETURNS ~${fmtOkb(payout)} OKB (${multiplier(stake, payout)}) IF ${trade.isYes ? "YES" : "NO"}`;
+    return `${pct}% IMPLIED · ~${fmtOkb(payout)} OKB (${multiplier(stake, payout)}) IF ${trade.isYes ? "YES" : "NO"}, AT CURRENT POOLS`;
   } catch {
     return null;
   }

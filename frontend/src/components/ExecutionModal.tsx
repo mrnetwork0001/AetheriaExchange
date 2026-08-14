@@ -329,8 +329,15 @@ export function ExecutionModal({
                 const est = payoutPreview(amount, outcomeTrade.isYes, market);
                 return (
                   <div className="ticket-row">
-                    <span className="k">
+                    <span
+                      className="k"
+                      title="Parimutuel estimate at current pool sizes - the final payout depends on the pools when the market closes"
+                    >
                       Est. payout if {outcomeTrade.isYes ? "YES" : "NO"}
+                      <span style={{ color: "var(--faint)" }}>
+                        {" "}
+                        (at current pools)
+                      </span>
                     </span>
                     <span
                       className={`v ${outcomeTrade.isYes ? "yes" : "no"}`}
@@ -384,6 +391,8 @@ export function ExecutionModal({
             NON-CUSTODIAL EXECUTION - EACH LEG IS A SEPARATE TRANSACTION SIGNED
             IN YOUR WALLET. PREDICTION MARKETS AND SPOT TRADES CARRY RISK OF
             TOTAL LOSS. THIS IS NOT FINANCIAL ADVICE.
+            {outcomeTrade &&
+              " PAYOUTS ARE PARIMUTUEL: THE ESTIMATE USES POOL SIZES RIGHT NOW, AND YOUR ACTUAL PAYOUT IS SET BY THE POOLS AT CLOSE - IT FALLS AS MORE STAKE JOINS YOUR SIDE. POSITIONS CANNOT BE SOLD BEFORE RESOLUTION."}
             {dexTrade &&
               " HEDGES EXECUTED ON THE OKX DEX INTERFACE COUNT TOWARD LAUNCH-GRANT VOLUME; IN-APP API ROUTING DOES NOT."}
           </p>
