@@ -78,10 +78,13 @@ Full runbook: [DEPLOY.md](DEPLOY.md).
       holds **0 OKB on mainnet**; the deploy transaction will fail outright.
 - [ ] **Deploy `OutcomeMarket` to chain 196** *(30 min)* - use the current
       source, which includes `forceCancelStale`.
-- [ ] **Teach the UI about mainnet** *(30-45 min, build)* - the wrong-network
-      prompt hardcodes testnet, so a user on 196 cannot be switched onto it.
-- [ ] **Write `seed:mainnet`** *(30 min + OKB, build)* - no such script
-      exists; mainnet would launch with zero markets.
+- [x] **Teach the UI about mainnet** - done 2026-08-15. New `useVenueChain`
+      hook: reads follow whichever chain has a venue, the wrong-network
+      prompt targets it, and a full-width banner offers the switch. Works
+      unchanged the day mainnet deploys.
+- [x] **Write `seed:mainnet`** - done 2026-08-15. Also: `/api/markets`
+      now defaults to mainnet once a venue exists there, so the Telegram
+      bot follows the launch without a config change.
 - [ ] **Commit and redeploy after the address lands** - `deploy.js` writes the
       address into git-tracked `frontend/src/contracts/config.json`, so the
       hosted site needs a commit + push + rebuild or it will keep reading
@@ -123,20 +126,16 @@ Full runbook: [DEPLOY.md](DEPLOY.md).
       pointed at market 0 (BTC), which has no X Layer token, so the flagship
       two-leg ticket came back single-leg on the first thing a judge clicks.
       It now points at the OKB market, which is genuinely hedgeable.
-- [ ] **A wallet on X Layer MAINNET is served fabricated data** *(1 hour to
-      gate, or resolved by the mainnet deploy)* - chain 196 is registered in
-      wagmi but has no venue, so `useMarkets`/`usePositions`/`useActivity`
-      fall back to DEMO data: invented markets, invented open positions, and
-      a fake "RESOLVED YES" in the ticker, behind only a small "OFFLINE
-      PREVIEW" chip. A judge whose OKX wallet defaults to mainnet sees a
-      livelier fake venue than the real one. This also contradicts CLAUDE.md
-      guideline 3 ("No Mock Data in Production"). Gate demo data behind an
-      explicit flag and show a full-width banner + "switch to testnet" CTA.
-- [ ] **`forceCancelStale` has no UI and is not on the deployed venue**
-      *(30 min after redeploy)* - the shipped ABI now describes a function
-      the live contract does not have (calling `RESOLUTION_GRACE` on the
-      venue reverts). Users with funds in an unsettled market see no path to
-      recovery. Add the button once the fixed contract is deployed.
+- [x] **A wallet on X Layer MAINNET is served fabricated data** - fixed
+      2026-08-15 by `useVenueChain`: a wallet on a venue-less chain now
+      browses the REAL venue read-only behind a full-width switch banner.
+      Demo data survives only when no venue exists on any chain (fresh
+      clone).
+- [x] **`forceCancelStale` UI** - built 2026-08-15, capability-probed: it
+      reads `RESOLUTION_GRACE` and renders only on contracts that have the
+      escape hatch, so it stays hidden on the old venue and lights up
+      automatically after the redeploy. Shows the anyone-can-cancel date,
+      then the button.
 - [ ] **The venue looks dead** *(1 hour)* - only 4 tradable markets, each
       with ~0.01-0.02 OKB of depth, and the CLOSED tab shows test debris
       ("Countdown UI test - ignore", two near-duplicate cancelled TSLA
@@ -169,9 +168,12 @@ Not strictly required, but each one is something a judge will notice.
       `contracts/.env` still says `http://localhost:3003`.
 - [ ] **Fix the port mismatch** *(10 min)* - agents default to 3003,
       `next start` serves 3000, the README says something else again.
-- [ ] **Run the three agents continuously** *(1-2 hours)* - market maker as a
-      long-running loop, drafter daily, resolver hourly. No systemd unit,
-      cron entry, PM2 config or Dockerfile exists yet.
+- [ ] **Run the three agents continuously** *(30 min on the VPS)* - the
+      artifacts now exist: `ops/bootstrap-vps.sh` installs a systemd unit
+      for the market maker and /etc/cron.d entries (resolver hourly,
+      drafter daily, flock-guarded), validates contracts/.env, and smoke
+      tests the resolver in dry-run. One command: `sudo bash
+      ops/bootstrap-vps.sh testnet`.
 - [ ] **Fund and separate the market-maker wallet** *(30 min)* -
       `MM_PRIVATE_KEY` currently equals `PRIVATE_KEY`, so one key is
       deployer, venue owner, resolver and market maker at once. It also holds
@@ -207,8 +209,11 @@ one discounts the rest.
 
 ### Polish a judge will see
 
-- [ ] **Open Graph image + social metadata** *(45 min)* - the launch post will
-      preview blank without it. Use the brand-kit announcement layout.
+- [x] **Open Graph image + social metadata** - done 2026-08-15. og.png
+      rendered from the brand formula (tagline + real settlement ticker),
+      full openGraph/twitter card metadata, metadataBase from
+      NEXT_PUBLIC_SITE_URL/VERCEL_URL. Set `NEXT_PUBLIC_SITE_URL` on Vercel
+      for canonical URLs.
 - [ ] **OKLink contract verification** *(45 min)* - unconfigured and untested;
       empty API key, no verify script.
 - [ ] **Hide or clean the test debris** *(15 min)* - cancelled test markets are

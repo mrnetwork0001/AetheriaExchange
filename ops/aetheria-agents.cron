@@ -1,0 +1,16 @@
+# Aetheria agent schedule. Installed by ops/bootstrap-vps.sh into
+# /etc/cron.d/aetheria (which substitutes __REPO_DIR__, __NETWORK__, __USER__).
+#
+# flock -n guards every entry: if a run is still going when the next fires,
+# the new one is SKIPPED (not queued) - the following slot picks up.
+# Paths are quoted: the repo directory may contain spaces.
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# Resolver - hourly, on the hour. Settles what is mechanically checkable,
+# lists the rest for a human in the log.
+0 * * * * __USER__ flock -n /tmp/aetheria-resolver.lock bash -lc 'cd "__REPO_DIR__/contracts" && npm run resolve:__NETWORK__ >> /var/log/aetheria/resolver.log 2>&1'
+
+# Pulse drafter - daily at 06:10 UTC, after the previous UTC day's metrics
+# have settled and comfortably before the US session opens.
+10 6 * * * __USER__ flock -n /tmp/aetheria-drafter.lock bash -lc 'cd "__REPO_DIR__/contracts" && npm run draft:__NETWORK__ >> /var/log/aetheria/drafter.log 2>&1'

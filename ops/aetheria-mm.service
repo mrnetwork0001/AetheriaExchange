@@ -1,0 +1,25 @@
+# Aetheria market-maker agent. Installed by ops/bootstrap-vps.sh, which
+# substitutes __REPO_DIR__, __NETWORK__ and __USER__.
+#
+#   systemctl status aetheria-mm      # health
+#   journalctl -u aetheria-mm -f      # live log
+[Unit]
+Description=Aetheria market-maker agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Never run the hot keys as root.
+User=__USER__
+WorkingDirectory=__REPO_DIR__/contracts
+# .env is read by dotenv inside hardhat; nothing secret lives in this unit.
+ExecStart=/usr/bin/env npm run mm:__NETWORK__
+Restart=always
+RestartSec=30
+# The MM exits by design when its lifetime budget is spent - restarting it
+# starts a fresh budget window, which is the desired 24/7 behaviour, but the
+# 30s backoff keeps a crash loop from hammering the RPC.
+
+[Install]
+WantedBy=multi-user.target
