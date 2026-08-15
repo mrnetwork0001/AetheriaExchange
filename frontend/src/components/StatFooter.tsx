@@ -83,7 +83,7 @@ export function StatFooter() {
               <XIcon />
             </a>
             <a
-              href={REPO}
+              href="https://github.com/AetheriaEx"
               target="_blank"
               rel="noreferrer"
               aria-label="Aetheria on GitHub"
