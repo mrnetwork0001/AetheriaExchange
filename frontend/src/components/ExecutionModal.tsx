@@ -4,15 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { encodeFunctionData, erc20Abi, parseEther } from "viem";
 import {
   useAccount,
-  useChainId,
   useConnect,
   usePublicClient,
   useSendTransaction,
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { explorerTxUrl, SUPPORTED_CHAINS } from "@/lib/chains";
-import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
+import {
+  explorerTxUrl,
+  SUPPORTED_CHAINS,
+  xLayer,
+  xLayerTestnet,
+} from "@/lib/chains";
+import { outcomeMarketAbi, type Market } from "@/lib/contract";
+import { useVenueChain } from "@/hooks/useVenueChain";
 import type { AppIntent } from "@/lib/intent";
 import { estimateNewStakePayout, fmtOkb, multiplier } from "@/lib/payout";
 import { displaySymbol } from "@/lib/tokens";
@@ -101,14 +106,19 @@ export function ExecutionModal({
   onClose: () => void;
 }) {
   const { address, isConnected, chainId: walletChainId } = useAccount();
-  const chainId = useChainId(); // config-tracked target chain (195/196)
+  // Execute against the chain that HAS the venue - the existing wallet-chain
+  // gate below then prompts a switch if the wallet is parked elsewhere.
+  const { chainId: venueChainId, address: venueAddress } = useVenueChain();
+  const chainId = venueChainId ?? xLayerTestnet.id;
+  // The DEX leg is not venue-bound: the aggregator serves mainnet only, so a
+  // wallet already on mainnet keeps its chain for a swap-only intent instead
+  // of being dragged to the venue's testnet.
+  const dexChainId = walletChainId === xLayer.id ? xLayer.id : chainId;
   const { connect, connectors } = useConnect();
   const { switchChainAsync } = useSwitchChain();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId });
   const { writeContractAsync } = useWriteContract();
   const { sendTransactionAsync } = useSendTransaction();
-
-  const venueAddress = contractAddress(chainId);
   const outcomeTrade = intent.outcomeTrade;
   const dexTrade = intent.dexTrade;
   const market = outcomeTrade
@@ -141,7 +151,7 @@ export function ExecutionModal({
   // and mark the leg as externally routed so in-app execution won't double it.
   function routeViaInterface() {
     if (!dexTrade || running) return;
-    const url = okxInterfaceUrl(dexTrade, chainId);
+    const url = okxInterfaceUrl(dexTrade, dexChainId);
     window.open(url, "_blank", "noopener,noreferrer");
     setDexState({ phase: "external", url });
   }
@@ -157,12 +167,14 @@ export function ExecutionModal({
     setRunning(true);
 
     try {
-      // The wallet must actually be on the target X Layer chain before any
-      // value-bearing transaction leaves it - useChainId() only tracks
-      // configured chains, so check the wallet's own chainId here.
-      if (walletChainId !== chainId) {
+      // The wallet must actually be on the chain a value-bearing transaction
+      // targets before it leaves. A ticket with an outcome leg needs the
+      // venue chain; a swap-only ticket needs only the DEX chain (mainnet
+      // wallets stay put).
+      const requiredChain = outcomeTrade ? chainId : dexChainId;
+      if (walletChainId !== requiredChain) {
         try {
-          await switchChainAsync({ chainId });
+          await switchChainAsync({ chainId: requiredChain });
         } catch {
           const supported = SUPPORTED_CHAINS.map((c) => c.id).join("/");
           setOutcomeState({ phase: "error", reason: `SWITCH WALLET TO CHAIN ${supported}` });
@@ -227,7 +239,7 @@ export function ExecutionModal({
         }
         try {
           setDexState({ phase: "pending", note: "ROUTING VIA OKX DEX…" });
-          const prep = await prepareSwap(dexTrade, chainId, address);
+          const prep = await prepareSwap(dexTrade, dexChainId, address);
           if (prep.status === "unavailable") {
             setDexState({ phase: "skipped", reason: "DEX ROUTING OFFLINE" });
             return;
@@ -356,7 +368,7 @@ export function ExecutionModal({
                 <span className="k">
                   Leg {outcomeTrade ? 2 : 1} · OKX DEX
                 </span>
-                <LegStatus state={dexState} chainId={chainId} />
+                <LegStatus state={dexState} chainId={dexChainId} />
               </div>
               <div className="ticket-row">
                 <span className="k">Swap</span>

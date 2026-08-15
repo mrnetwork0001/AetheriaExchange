@@ -12,10 +12,12 @@ import { MarketCard } from "@/components/MarketCard";
 import { MarketDetailModal } from "@/components/MarketDetailModal";
 import { PositionsPanel } from "@/components/PositionsPanel";
 import { StatFooter } from "@/components/StatFooter";
+import { useSwitchChain } from "wagmi";
 import { useActivity } from "@/hooks/useActivity";
 import { useNow } from "@/hooks/useNow";
 import { useMarkets } from "@/hooks/useMarkets";
 import { usePositions } from "@/hooks/usePositions";
+import { useVenueChain } from "@/hooks/useVenueChain";
 import type { Market } from "@/lib/contract";
 import type { AppIntent, MarketDraft } from "@/lib/intent";
 import type { CreateMarketInitial } from "@/components/CreateMarketModal";
@@ -64,6 +66,8 @@ export default function Home() {
   const [page, setPage] = useState(0);
   const now = useNow();
   const ops = useAgentOps();
+  const venueChain = useVenueChain();
+  const { switchChain } = useSwitchChain();
   // Co-pilot visibility, persisted per browser. Defaults open (it's the
   // product's identity); starts open on the server render and applies the
   // stored preference after mount to avoid a hydration mismatch.
@@ -192,6 +196,22 @@ export default function Home() {
           <span className="dim">A hedge you can click.</span>
         </h1>
       </section>
+
+      {venueChain.mismatch && venueChain.chainId !== null && (
+        <div className="network-banner">
+          <span>
+            YOUR WALLET IS ON ANOTHER NETWORK - THE VENUE IS LIVE ON{" "}
+            {(venueChain.chainName ?? "").toUpperCase()}. ANY TRADE WILL
+            PROMPT A NETWORK SWITCH.
+          </span>
+          <button
+            className="chip"
+            onClick={() => switchChain({ chainId: venueChain.chainId! })}
+          >
+            SWITCH TO {(venueChain.chainName ?? "").toUpperCase()}
+          </button>
+        </div>
+      )}
 
       <ActivityTicker items={activity} onSelect={openDetail} />
 

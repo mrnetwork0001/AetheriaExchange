@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { useChainId, useReadContract, useReadContracts } from "wagmi";
+import { useReadContract, useReadContracts } from "wagmi";
 import {
-  contractAddress,
   DEMO_MARKETS,
   outcomeMarketAbi,
   type Market,
   type MarketStatus,
 } from "@/lib/contract";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const abi = outcomeMarketAbi as any;
 
@@ -29,8 +29,9 @@ export function useMarkets(): {
   loading: boolean;
   refetch: () => void;
 } {
-  const chainId = useChainId();
-  const address = contractAddress(chainId);
+  // Read from whichever chain has a venue - a wallet parked on a chain
+  // without one must never be served demo data as if it were live.
+  const { chainId, address } = useVenueChain();
 
   const {
     data: count,
@@ -39,6 +40,7 @@ export function useMarkets(): {
   } = useReadContract({
     abi,
     address: address ?? undefined,
+    chainId: chainId ?? undefined,
     functionName: "marketCount",
     query: { enabled: !!address, refetchInterval: 15_000 },
   });
@@ -48,10 +50,11 @@ export function useMarkets(): {
     return Array.from({ length: Number(count) }, (_, i) => ({
       abi,
       address,
+      chainId: chainId ?? undefined,
       functionName: "getMarket",
       args: [BigInt(i)],
     }));
-  }, [address, count]);
+  }, [address, chainId, count]);
 
   const { data: results, refetch: refetchMarkets } = useReadContracts({
     contracts: marketCalls as any,

@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseAbiItem } from "viem";
-import { useChainId, usePublicClient, useWatchContractEvent } from "wagmi";
-import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
+import { usePublicClient, useWatchContractEvent } from "wagmi";
+import { outcomeMarketAbi, type Market } from "@/lib/contract";
 import { fmtOkb } from "@/lib/payout";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const abi = outcomeMarketAbi as any;
 
@@ -53,9 +54,10 @@ export function useActivity(
   markets: Market[],
   live: boolean
 ): { items: ActivityItem[]; partial: boolean } {
-  const chainId = useChainId();
-  const publicClient = usePublicClient();
-  const venue = contractAddress(chainId);
+  // Pin every read and watcher to the venue's chain - the wallet may be
+  // parked elsewhere, and the ticker must keep streaming the real venue.
+  const { chainId, address: venue } = useVenueChain();
+  const publicClient = usePublicClient({ chainId: chainId ?? undefined });
   const [items, setItems] = useState<ActivityItem[]>([]);
 
   // Mappers read markets through a ref so the watcher callbacks stay
@@ -162,6 +164,7 @@ export function useActivity(
   useWatchContractEvent({
     address: venue ?? undefined,
     abi,
+    chainId: chainId ?? undefined,
     eventName: "SharesBought",
     enabled: live && !!venue,
     onLogs: onBet,
@@ -169,6 +172,7 @@ export function useActivity(
   useWatchContractEvent({
     address: venue ?? undefined,
     abi,
+    chainId: chainId ?? undefined,
     eventName: "MarketCreated",
     enabled: live && !!venue,
     onLogs: onNew,
@@ -176,6 +180,7 @@ export function useActivity(
   useWatchContractEvent({
     address: venue ?? undefined,
     abi,
+    chainId: chainId ?? undefined,
     eventName: "MarketResolved",
     enabled: live && !!venue,
     onLogs: onRes,
@@ -183,6 +188,7 @@ export function useActivity(
   useWatchContractEvent({
     address: venue ?? undefined,
     abi,
+    chainId: chainId ?? undefined,
     eventName: "MarketCancelled",
     enabled: live && !!venue,
     onLogs: onCancel,

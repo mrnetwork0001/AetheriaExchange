@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   useAccount,
-  useChainId,
   useConnect,
   usePublicClient,
+  useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { contractAddress, outcomeMarketAbi } from "@/lib/contract";
+import { outcomeMarketAbi } from "@/lib/contract";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const CATEGORIES = ["CRYPTO", "MACRO", "SPORTS", "WEB3", "PULSE", "RWA", "EQUITY", "OTHER"];
 
@@ -34,12 +35,14 @@ export function CreateMarketModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
+  const { address, isConnected, chainId: walletChainId } = useAccount();
+  // Deploy onto the chain that has the venue, wherever the wallet is parked.
+  const { chainId: venueChainId, address: venue, chainName } = useVenueChain();
+  const chainId = venueChainId ?? undefined;
   const { connect, connectors } = useConnect();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId });
   const { writeContractAsync } = useWriteContract();
-  const venue = contractAddress(chainId);
+  const { switchChainAsync } = useSwitchChain();
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [category, setCategory] = useState(
@@ -61,13 +64,25 @@ export function CreateMarketModal({
     title.trim().length > 0 && endEpoch > Math.floor(Date.now() / 1000);
 
   async function submit() {
-    if (!live || !venue) return;
+    if (!live || !venue || chainId === undefined) return;
     if (!isConnected || !address) {
       const connector = connectors[0];
       if (connector) connect({ connector });
       return;
     }
     if (!valid || state.phase === "pending") return;
+    if (walletChainId !== chainId) {
+      setState({ phase: "pending", note: "SWITCHING NETWORK…" });
+      try {
+        await switchChainAsync({ chainId });
+      } catch {
+        setState({
+          phase: "error",
+          reason: `SWITCH YOUR WALLET TO ${(chainName ?? "THE VENUE CHAIN").toUpperCase()} FIRST`,
+        });
+        return;
+      }
+    }
     try {
       setState({ phase: "pending", note: "AWAITING SIGNATURE…" });
       const hash = await writeContractAsync({

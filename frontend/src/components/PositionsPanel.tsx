@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  usePublicClient,
+  useSwitchChain,
+  useWriteContract,
+} from "wagmi";
 import { explorerTxUrl } from "@/lib/chains";
-import { contractAddress, outcomeMarketAbi } from "@/lib/contract";
+import { outcomeMarketAbi } from "@/lib/contract";
 import { fmtOkb } from "@/lib/payout";
 import type { Position } from "@/hooks/usePositions";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const STATE_LABEL: Record<Position["state"], { text: string; cls: string }> = {
   OPEN: { text: "OPEN", cls: "open" },
@@ -32,11 +38,15 @@ export function PositionsPanel({
   connected: boolean;
   onRefetch: () => void;
 }) {
-  const { address } = useAccount();
-  const chainId = useChainId();
-  const publicClient = usePublicClient();
+  const { address, chainId: walletChainId } = useAccount();
+  // Positions are read from the venue chain, so claims must be written there
+  // too - a wallet parked elsewhere gets a switch prompt, never a dead
+  // button.
+  const { chainId: venueChainId, address: venue, chainName } = useVenueChain();
+  const chainId = venueChainId ?? undefined;
+  const publicClient = usePublicClient({ chainId });
   const { writeContractAsync } = useWriteContract();
-  const venue = contractAddress(chainId);
+  const { switchChainAsync } = useSwitchChain();
   const [claims, setClaims] = useState<Record<number, ClaimState>>({});
 
   // Claim statuses belong to the connected account - reset on switch so a
@@ -46,8 +56,22 @@ export function PositionsPanel({
   }, [address]);
 
   async function claim(marketId: number) {
-    if (!venue) return;
+    if (!venue || chainId === undefined) return;
     setClaims((c) => ({ ...c, [marketId]: { phase: "pending" } }));
+    if (walletChainId !== chainId) {
+      try {
+        await switchChainAsync({ chainId });
+      } catch {
+        setClaims((c) => ({
+          ...c,
+          [marketId]: {
+            phase: "error",
+            reason: `SWITCH TO ${(chainName ?? "THE VENUE CHAIN").toUpperCase()} TO CLAIM`,
+          },
+        }));
+        return;
+      }
+    }
     try {
       const hash = await writeContractAsync({
         abi: outcomeMarketAbi as any,
@@ -120,7 +144,7 @@ export function PositionsPanel({
                 (claimState.phase === "done" ? (
                   <a
                     className="leg-status confirmed"
-                    href={explorerTxUrl(chainId, claimState.hash)}
+                    href={explorerTxUrl(chainId ?? 1952, claimState.hash)}
                     target="_blank"
                     rel="noreferrer"
                   >

@@ -2,29 +2,28 @@
 
 import {
   useAccount,
-  useChainId,
   useConnect,
   useDisconnect,
   useSwitchChain,
 } from "wagmi";
-import { SUPPORTED_CHAINS, xLayerTestnet } from "@/lib/chains";
+import { SUPPORTED_CHAINS } from "@/lib/chains";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 function truncate(addr: string): string {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 export function Header() {
-  // walletChainId is the wallet's actual chain; useChainId() only ever
-  // returns configured chains, so it can't detect a wrong network.
-  const { address, isConnected, chainId: walletChainId } = useAccount();
-  const chainId = useChainId();
+  const { address, isConnected } = useAccount();
+  // "Wrong network" means the wallet's chain has no venue - not merely an
+  // unlisted chain. The switch target is wherever the venue actually is, so
+  // this stays correct the day mainnet deploys.
+  const { chainId: venueChainId, chainName, mismatch } = useVenueChain();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
 
-  const chain = SUPPORTED_CHAINS.find((c) => c.id === chainId);
-  const wrongNetwork =
-    isConnected && !SUPPORTED_CHAINS.some((c) => c.id === walletChainId);
+  const chain = SUPPORTED_CHAINS.find((c) => c.id === venueChainId);
 
   return (
     <header className="header">
@@ -38,13 +37,13 @@ export function Header() {
       </div>
 
       <div className="header-right">
-        {wrongNetwork ? (
+        {mismatch && venueChainId ? (
           <button
             className="chain-badge wrong"
-            onClick={() => switchChain({ chainId: xLayerTestnet.id })}
-            title="Click to switch to X Layer"
+            onClick={() => switchChain({ chainId: venueChainId })}
+            title={`Click to switch to ${chainName ?? "the venue chain"}`}
           >
-            WRONG NETWORK - SWITCH
+            SWITCH TO {(chainName ?? "VENUE CHAIN").toUpperCase()}
           </button>
         ) : (
           <span className="chain-badge">

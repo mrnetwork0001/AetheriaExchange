@@ -2,9 +2,10 @@
 
 import { useMemo } from "react";
 import { parseEther } from "viem";
-import { useAccount, useChainId, useReadContracts } from "wagmi";
-import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
+import { useAccount, useReadContracts } from "wagmi";
+import { outcomeMarketAbi, type Market } from "@/lib/contract";
 import { existingStakePayout } from "@/lib/payout";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const abi = outcomeMarketAbi as any;
 
@@ -83,18 +84,17 @@ function demoPositions(markets: Market[]): Position[] {
 
 export function usePositions(markets: Market[], live: boolean) {
   const { address } = useAccount();
-  const chainId = useChainId();
-  const venue = contractAddress(chainId);
+  const { chainId, address: venue } = useVenueChain();
   const enabled = live && !!venue && !!address && markets.length > 0;
 
   const calls = useMemo(() => {
     if (!enabled) return [];
     return markets.flatMap((m) => [
-      { abi, address: venue, functionName: "yesStakeOf", args: [BigInt(m.id), address] },
-      { abi, address: venue, functionName: "noStakeOf", args: [BigInt(m.id), address] },
-      { abi, address: venue, functionName: "claimed", args: [BigInt(m.id), address] },
+      { abi, address: venue, chainId: chainId ?? undefined, functionName: "yesStakeOf", args: [BigInt(m.id), address] },
+      { abi, address: venue, chainId: chainId ?? undefined, functionName: "noStakeOf", args: [BigInt(m.id), address] },
+      { abi, address: venue, chainId: chainId ?? undefined, functionName: "claimed", args: [BigInt(m.id), address] },
     ]);
-  }, [enabled, markets, venue, address]);
+  }, [enabled, markets, venue, chainId, address]);
 
   const { data, refetch } = useReadContracts({
     contracts: calls as any,

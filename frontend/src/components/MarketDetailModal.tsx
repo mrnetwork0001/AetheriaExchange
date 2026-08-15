@@ -3,22 +3,26 @@
 import { useEffect, useState } from "react";
 import {
   useAccount,
-  useChainId,
   usePublicClient,
   useReadContract,
+  useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { contractAddress, outcomeMarketAbi, type Market } from "@/lib/contract";
+import { outcomeMarketAbi, type Market } from "@/lib/contract";
 import { fmtOkb } from "@/lib/payout";
 import type { ActivityItem } from "@/hooks/useActivity";
 import { useCountdown } from "@/hooks/useNow";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const STATUS_LABEL = ["LIVE", "RESOLVED", "CANCELLED"] as const;
 
+// origin keeps the two settlement boxes (owner controls / public escape
+// hatch) from mirroring each other's pending/error status.
+type AdminOrigin = "admin" | "hatch";
 type AdminState =
   | { phase: "idle" }
-  | { phase: "pending"; action: string }
-  | { phase: "error"; reason: string };
+  | { phase: "pending"; action: string; origin: AdminOrigin }
+  | { phase: "error"; reason: string; origin: AdminOrigin };
 
 interface FairValue {
   p: number;
@@ -50,11 +54,13 @@ export function MarketDetailModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const { address } = useAccount();
-  const chainId = useChainId();
-  const publicClient = usePublicClient();
+  const { address, chainId: walletChainId } = useAccount();
+  // Reads and admin writes target the venue's chain, wherever the wallet is.
+  const { chainId: venueChainId, address: venue, chainName } = useVenueChain();
+  const chainId = venueChainId ?? undefined;
+  const publicClient = usePublicClient({ chainId });
   const { writeContractAsync } = useWriteContract();
-  const venue = contractAddress(chainId);
+  const { switchChainAsync } = useSwitchChain();
   const [copied, setCopied] = useState(false);
   const [admin, setAdmin] = useState<AdminState>({ phase: "idle" });
   const [fair, setFair] = useState<FairValue | null>(null);
@@ -64,6 +70,7 @@ export function MarketDetailModal({
   const { data: owner } = useReadContract({
     abi: outcomeMarketAbi as any,
     address: venue ?? undefined,
+    chainId,
     functionName: "owner",
     query: { enabled: live && !!venue },
   });
@@ -71,6 +78,21 @@ export function MarketDetailModal({
     !!address &&
     typeof owner === "string" &&
     address.toLowerCase() === owner.toLowerCase();
+
+  // Capability probe for the permissionless escape hatch: contracts deployed
+  // before 2026-08-15 don't have RESOLUTION_GRACE, the read stays undefined,
+  // and the UI for it correctly never renders.
+  const { data: grace } = useReadContract({
+    abi: outcomeMarketAbi as any,
+    address: venue ?? undefined,
+    chainId,
+    functionName: "RESOLUTION_GRACE",
+    query: { enabled: live && !!venue && market.status === 0 },
+  });
+  const graceEnd =
+    typeof grace === "bigint" ? market.endTime + Number(grace) : null;
+  const graceElapsed =
+    graceEnd !== null && graceEnd <= Math.floor(Date.now() / 1000);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -151,21 +173,40 @@ export function MarketDetailModal({
     }
   }
 
-  async function adminAction(action: "resolveYes" | "resolveNo" | "cancel") {
+  async function adminAction(
+    action: "resolveYes" | "resolveNo" | "cancel" | "forceCancel"
+  ) {
     if (!venue) return;
     const labels = {
       resolveYes: "RESOLVING YES…",
       resolveNo: "RESOLVING NO…",
       cancel: "CANCELLING…",
+      forceCancel: "CANCELLING (PERMISSIONLESS)…",
     };
-    setAdmin({ phase: "pending", action: labels[action] });
+    const origin: AdminOrigin = action === "forceCancel" ? "hatch" : "admin";
+    setAdmin({ phase: "pending", action: labels[action], origin });
+    // These writes settle or cancel real stakes - never let one leave on a
+    // wallet parked on another chain.
+    if (chainId !== undefined && walletChainId !== chainId) {
+      try {
+        await switchChainAsync({ chainId });
+      } catch {
+        setAdmin({
+          phase: "error",
+          reason: `SWITCH YOUR WALLET TO ${(chainName ?? "THE VENUE CHAIN").toUpperCase()} FIRST`,
+          origin,
+        });
+        return;
+      }
+    }
     try {
       const hash = await writeContractAsync(
-        action === "cancel"
+        action === "cancel" || action === "forceCancel"
           ? {
               abi: outcomeMarketAbi as any,
               address: venue,
-              functionName: "cancelMarket",
+              functionName:
+                action === "forceCancel" ? "forceCancelStale" : "cancelMarket",
               args: [BigInt(market.id)],
               chainId,
             }
@@ -185,6 +226,7 @@ export function MarketDetailModal({
       setAdmin({
         phase: "error",
         reason: err?.shortMessage?.toUpperCase?.() ?? "TX FAILED",
+        origin,
       });
     }
   }
@@ -382,11 +424,54 @@ export function MarketDetailModal({
                     : `NO STAKE ON ${noYesStake ? "YES" : "NO"} - THAT SIDE CANNOT WIN, SO RESOLVING IT WOULD CANCEL AND REFUND INSTEAD`}
                 </span>
               )}
-              {admin.phase === "pending" && (
+              {admin.phase === "pending" && admin.origin === "admin" && (
                 <span className="leg-status pending">{admin.action}</span>
               )}
-              {admin.phase === "error" && (
+              {admin.phase === "error" && admin.origin === "admin" && (
                 <span className="leg-status error">{admin.reason}</span>
+              )}
+            </div>
+          )}
+
+          {/* Permissionless escape hatch - shown to EVERYONE, because that is
+              the point: once the grace period passes, no key is needed to
+              free the stakes. Renders only on contracts that have it. */}
+          {live && market.status === 0 && tradingEnded && graceEnd !== null && (
+            <div className="admin-box">
+              <span className="label" style={{ fontSize: 9 }}>
+                ESCAPE HATCH
+              </span>
+              {graceElapsed ? (
+                <>
+                  <p className="fair-rationale">
+                    This market has been closed for over{" "}
+                    {Math.round(Number(grace) / 86400)} days without being
+                    settled. Anyone may now cancel it - every stake becomes
+                    refundable. Cancelling only ever refunds; it cannot move
+                    value between participants.
+                  </p>
+                  <div className="admin-actions">
+                    <button
+                      className="btn-outcome btn-no"
+                      disabled={admin.phase === "pending"}
+                      onClick={() => adminAction("forceCancel")}
+                    >
+                      FORCE CANCEL &amp; REFUND ALL
+                    </button>
+                  </div>
+                  {admin.phase === "pending" && admin.origin === "hatch" && (
+                    <span className="leg-status pending">{admin.action}</span>
+                  )}
+                  {admin.phase === "error" && admin.origin === "hatch" && (
+                    <span className="leg-status error">{admin.reason}</span>
+                  )}
+                </>
+              ) : (
+                <span className="leg-status skipped">
+                  IF STILL UNSETTLED BY{" "}
+                  {new Date(graceEnd * 1000).toLocaleString()}, ANYONE CAN
+                  CANCEL &amp; REFUND - NO KEY REQUIRED
+                </span>
               )}
             </div>
           )}

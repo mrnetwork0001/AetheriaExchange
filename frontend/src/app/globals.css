@@ -1893,6 +1893,33 @@ button {
   box-shadow: 0 0 32px rgba(160, 107, 255, 0.55);
 }
 
+/* wrong-network banner */
+.network-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid var(--label);
+  background: rgba(165, 150, 107, 0.07);
+  padding: 10px 16px;
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--label);
+}
+
+.network-banner .chip {
+  border-color: var(--label);
+  color: var(--label);
+}
+
+.network-banner .chip:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+
 /* market filters + pagination */
 .filter-bar {
   display: flex;
