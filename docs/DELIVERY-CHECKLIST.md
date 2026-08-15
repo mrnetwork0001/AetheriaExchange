@@ -66,11 +66,13 @@ Full runbook: [DEPLOY.md](DEPLOY.md).
 - [x] **`maxDuration = 60` on the AI and memory routes** - done 2026-08-15,
       so a slow inference call is not killed by the platform before the
       app's own timeout can produce an honest fallback.
-- [ ] **Create the Upstash database** *(5 min)* - free tier; copy the REST
-      URL and token, not the `redis://` string.
-- [ ] **Deploy to Vercel** *(30 min)* - root directory `frontend`, env vars
-      per DEPLOY.md. `AGENT_LOG_SECRET` is mandatory: `/api/agent-log` fails
-      closed without it.
+- [x] **Upstash + Vercel deploy** - LIVE 2026-08-15 at
+      https://www.aetheria.exchange (custom domain, apex 308s to www).
+      Verified in production: page + console clean, live venue reads (12
+      markets), ops-feed auth (401/200), real 0G inference. Remaining:
+      set `NEXT_PUBLIC_SITE_URL=https://www.aetheria.exchange` (OG tags
+      currently carry a preview URL) and confirm the `aetheria:ops:*` keys
+      appear in the Upstash data browser.
 
 ### X Layer mainnet
 

@@ -7,7 +7,7 @@ click, fully self-custodied.
 
 | | |
 |---|---|
-| Live dApp | _(deployment URL - added at launch)_ |
+| Live dApp | **[aetheria.exchange](https://www.aetheria.exchange)** |
 | GitHub | https://github.com/mrnetwork0001/AetheriaExchange |
 | X account | https://x.com/AetheriaEx |
 | Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
@@ -196,7 +196,7 @@ Full detail: [README.md](README.md#roadmap).
 > co-pilot that turns plain English into outcome bets + correlated OKX DEX
 > hedges. One click. Self-custodied. The AI even drafts the markets.
 >
-> Try it: _(dApp URL)_
+> Try it: aetheria.exchange
 > Built on X Layer · #XLayerAISeason
 
 _(Attach: 30–60s screen recording of the ask → ticket → execute flow.)_
