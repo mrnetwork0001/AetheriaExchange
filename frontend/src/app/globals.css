@@ -653,30 +653,6 @@ button {
   cursor: not-allowed;
 }
 
-/* ── stat footer ── */
-
-.stat-footer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0;
-  border-top: 1px solid var(--line-soft);
-  padding: 20px 0;
-  flex-wrap: wrap;
-}
-
-.stat-footer .stat {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  color: var(--label);
-  padding: 0 26px;
-}
-
-.stat-footer .divider {
-  color: var(--line);
-}
-
 /* ── tabs ── */
 
 .tab-bar {
@@ -1462,16 +1438,6 @@ button {
 
 .footer-dead {
   color: var(--faint);
-}
-
-.footer-bottom {
-  border-top: 1px solid var(--line-soft);
-  padding-bottom: 22px;
-}
-
-.stat-footer {
-  border-top: none;
-  padding: 20px 0 0;
 }
 
 .footer-copy {

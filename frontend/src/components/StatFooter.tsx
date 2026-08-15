@@ -1,16 +1,8 @@
 "use client";
 
-import { useChainId } from "wagmi";
-import { contractAddress } from "@/lib/contract";
+import { useVenueChain } from "@/hooks/useVenueChain";
 
 const REPO = "https://github.com/mrnetwork0001/AetheriaExchange";
-
-const STATS = [
-  "PARIMUTUEL SETTLEMENT",
-  "2% FEE ON LOSING POOL",
-  "NON-CUSTODIAL",
-  "AI CO-PILOT",
-];
 
 const PRODUCT = [
   { text: "Outcome Markets", href: "#markets" },
@@ -43,8 +35,13 @@ function GitHubIcon() {
 }
 
 export function StatFooter() {
-  const chainId = useChainId();
-  const venue = contractAddress(chainId);
+  // The venue link always points at the chain that actually has the venue,
+  // whatever chain the visitor's wallet is parked on.
+  const { chainId, address: venue } = useVenueChain();
+  const explorerBase =
+    chainId === 196
+      ? "https://www.oklink.com/xlayer"
+      : "https://www.oklink.com/xlayer-test";
 
   const resources = [
     { text: "GitHub", href: REPO },
@@ -53,7 +50,7 @@ export function StatFooter() {
     venue
       ? {
           text: "Venue Contract",
-          href: `https://www.oklink.com/xlayer-test/address/${venue}`,
+          href: `${explorerBase}/address/${venue}`,
         }
       : { text: "Venue Contract - deploying", href: null },
   ];
@@ -136,20 +133,6 @@ export function StatFooter() {
         </div>
       </div>
 
-      <div className="footer-bottom">
-        <div className="stat-footer">
-          {STATS.map((s) => (
-            <span key={s} style={{ display: "flex", alignItems: "center" }}>
-              <span className="stat">{s}</span>
-              <span className="divider">|</span>
-            </span>
-          ))}
-          <span className="stat">CHAIN {chainId ?? "-"}</span>
-        </div>
-        <p className="footer-copy">
-          © 2026 AETHERIA EXCHANGE · BUILT FOR THE X LAYER AI SEASON HACKATHON
-        </p>
-      </div>
     </footer>
   );
 }
