@@ -60,6 +60,11 @@ function sanitizeMarketContext(raw: unknown) {
 }
 
 export const runtime = "nodejs";
+// Inference can legitimately take tens of seconds; without this the host
+// kills the function before the provider timeout and the user gets a
+// platform error instead of the app's own honest fallback.
+export const maxDuration = 60;
+
 
 // Tradable hedge legs on X Layer. Every symbol here must resolve in
 // lib/tokens.ts - the execution ticket looks each one up by symbol.
@@ -371,12 +376,13 @@ export async function POST(req: Request) {
     intent.explanation = `${intent.explanation}\n\nNote: the suggested tokenized-equity leg would not have offset this position (wrong company, or the same direction as the bet), so it was dropped - only the outcome leg remains.`;
   }
   // Feed the AGENT OPS console - intent type and engine only, never the
-  // user's prompt text.
-  recordOps(
+  // user's prompt text. Awaited so a serverless instance is not frozen
+  // mid-write, but never allowed to fail the response.
+  await recordOps(
     "copilot",
     "intent parsed",
     `${intent.intentType}${intent.engine ? ` · engine ${intent.engine}` : ""}`
-  );
+  ).catch(() => {});
   return NextResponse.json(intent);
 }
 

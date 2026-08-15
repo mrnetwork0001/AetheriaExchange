@@ -54,16 +54,23 @@ Nothing below is optional - the submission is incomplete without it.
 
 ### Hosting
 
-- [ ] **Host the frontend publicly** *(1-2 hours, deploy-ops)* - nothing is
-      deployed and no deploy config exists. This blocks the video, the
-      launch post, the form, and every judge who tries to click through.
-- [ ] **Set production env vars on the host** - `AI_PROVIDER=0g`,
-      `ZG_COMPUTE_BASE_URL`, `ZG_COMPUTE_API_KEY`, `ZG_COMPUTE_MODEL`,
-      `AGENT_LOG_SECRET`.
-- [ ] **Add `maxDuration` to the AI routes** *(10 min, build)* - the provider
-      timeout is 60s; most serverless defaults kill the function before that,
-      so a slow inference call returns a platform error instead of the app's
-      own honest fallback.
+**Architecture chosen: Vercel + Upstash Redis + agents on a VPS.**
+Full runbook: [DEPLOY.md](DEPLOY.md).
+
+- [x] **Shared ops feed for serverless** - done 2026-08-15. `opsStore` is
+      backed by Upstash Redis when configured (INCR for monotonic ids,
+      RPUSH/LTRIM for a bounded shared list), falling back to per-process
+      memory otherwise. Verified end-to-end against a mock Upstash endpoint,
+      including the since-cursor and graceful degradation when the store is
+      unreachable.
+- [x] **`maxDuration = 60` on the AI and memory routes** - done 2026-08-15,
+      so a slow inference call is not killed by the platform before the
+      app's own timeout can produce an honest fallback.
+- [ ] **Create the Upstash database** *(5 min)* - free tier; copy the REST
+      URL and token, not the `redis://` string.
+- [ ] **Deploy to Vercel** *(30 min)* - root directory `frontend`, env vars
+      per DEPLOY.md. `AGENT_LOG_SECRET` is mandatory: `/api/agent-log` fails
+      closed without it.
 
 ### X Layer mainnet
 

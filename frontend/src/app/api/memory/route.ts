@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+// 0G Storage uploads are network-bound and can be slow.
+export const maxDuration = 60;
+
 export const dynamic = "force-dynamic";
 
 // 0G Storage sync for co-pilot memory. The client keeps localStorage as the

@@ -3,6 +3,10 @@ import { aiChatJson } from "@/lib/aiChat";
 import { takeRate } from "@/lib/rateBudget";
 
 export const runtime = "nodejs";
+// See the intent route: give inference room rather than let the platform
+// truncate it.
+export const maxDuration = 60;
+
 
 // Every call bills the inference provider - cap inputs, rate-budget callers,
 // and cache per title so N users opening the same market cost one call.

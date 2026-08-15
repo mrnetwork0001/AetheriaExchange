@@ -14,13 +14,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const since = Number(new URL(req.url).searchParams.get("since") ?? "0");
-  // `seq` lets pollers detect a server restart (seq below their cursor) and
+  // `seq` lets pollers detect a store reset (seq below their cursor) and
   // resync instead of freezing on a stale cursor.
-  return NextResponse.json({
-    events: readOps(since),
-    seq: currentSeq(),
-    now: Date.now(),
-  });
+  const [events, seq] = await Promise.all([readOps(since), currentSeq()]);
+  return NextResponse.json({ events, seq, now: Date.now() });
 }
 
 export async function POST(req: Request) {
@@ -50,6 +47,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "agent and action required" }, { status: 400 });
   }
 
-  const id = recordOps(agent, action, String(body.detail ?? ""));
+  const id = await recordOps(agent, action, String(body.detail ?? ""));
   return NextResponse.json({ ok: true, id });
 }
