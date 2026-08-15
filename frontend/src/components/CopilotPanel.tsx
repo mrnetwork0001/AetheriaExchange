@@ -19,29 +19,36 @@ const WELCOME: ChatMessage = {
 };
 
 const SUGGESTED_PROMPTS = [
-  "Bet 2 OKB YES on market 0 and hedge it",
+  // Points at an OKB-denominated market on purpose: the hedge leg needs a
+  // token that exists on X Layer, so a BTC market would return a single-leg
+  // ticket and undersell the flagship two-leg flow.
+  "Bet 2 OKB YES on the OKB all-time-high market and hedge it",
   "Which market has the best risk/reward?",
   "Create today's X Layer pulse market on active wallets",
   "How would I hedge BTC exposure with USDT?",
 ];
 
 // Progressive text reveal - runs once per mounted message.
-function Typewriter({ text }: { text: string }) {
+function Typewriter({ text }: { text?: string }) {
   const [n, setN] = useState(0);
+  // Defensive: a message with no text must never crash the panel. Rendering
+  // is the last place an unexpected shape should surface, and this component
+  // is inside the page's only interactive surface.
+  const safe = typeof text === "string" ? text : "";
   useEffect(() => {
-    if (!text) return;
-    const step = Math.max(2, Math.round(text.length / 45));
+    if (!safe) return;
+    const step = Math.max(2, Math.round(safe.length / 45));
     const timer = setInterval(() => {
       setN((prev) => {
         const next = prev + step;
-        if (next >= text.length) clearInterval(timer);
-        return Math.min(next, text.length);
+        if (next >= safe.length) clearInterval(timer);
+        return Math.min(next, safe.length);
       });
     }, 18);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  return <>{text.slice(0, n)}</>;
+  return <>{safe.slice(0, n)}</>;
 }
 
 function outcomeQuote(intent: AppIntent, markets: Market[]): string | null {
@@ -248,7 +255,24 @@ export function CopilotPanel({
             })),
         }),
       });
-      const intent: AppIntent = await res.json();
+      // An error response carries { error } and no explanation - surface it
+      // as a co-pilot message instead of pushing an undefined body into the
+      // feed.
+      const body = await res.json().catch(() => null);
+      if (!res.ok || typeof body?.explanation !== "string") {
+        setMessages((m) => [
+          ...m,
+          {
+            role: "copilot",
+            text:
+              typeof body?.error === "string"
+                ? `${body.error}. Try rephrasing, or ask something shorter.`
+                : "The co-pilot could not answer that. Try again in a moment.",
+          },
+        ]);
+        return;
+      }
+      const intent: AppIntent = body;
       setMessages((m) => [
         ...m,
         { role: "copilot", text: intent.explanation, intent },
@@ -383,6 +407,9 @@ export function CopilotPanel({
       <div className="copilot-input">
         <input
           value={input}
+          // Matches the route's cap, so the limit is felt as a full input box
+          // rather than a rejected request.
+          maxLength={2000}
           placeholder={listening ? "LISTENING…" : "ASK THE CO-PILOT_"}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}

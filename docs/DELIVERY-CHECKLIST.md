@@ -102,6 +102,42 @@ Nothing below is optional - the submission is incomplete without it.
 
 ---
 
+## 1b. Found by the frontend audit (2026-08-15)
+
+- [x] **Co-pilot crashed the whole page on any API error** - fixed
+      2026-08-15. `res.json()` ran without an `res.ok` check, so an error
+      body (no `explanation`) reached `Typewriter`, which called `.slice()`
+      on `undefined`; with no error boundary the entire venue was replaced by
+      Next's bare "Application error". Pasting a >2000-char question
+      triggered it. Now: `res.ok` checked, explanation type-guarded,
+      Typewriter null-safe, input capped at 2000, and `app/error.tsx` added
+      as a boundary.
+- [x] **First suggested prompt produced no hedge leg** - fixed. The chip
+      pointed at market 0 (BTC), which has no X Layer token, so the flagship
+      two-leg ticket came back single-leg on the first thing a judge clicks.
+      It now points at the OKB market, which is genuinely hedgeable.
+- [ ] **A wallet on X Layer MAINNET is served fabricated data** *(1 hour to
+      gate, or resolved by the mainnet deploy)* - chain 196 is registered in
+      wagmi but has no venue, so `useMarkets`/`usePositions`/`useActivity`
+      fall back to DEMO data: invented markets, invented open positions, and
+      a fake "RESOLVED YES" in the ticker, behind only a small "OFFLINE
+      PREVIEW" chip. A judge whose OKX wallet defaults to mainnet sees a
+      livelier fake venue than the real one. This also contradicts CLAUDE.md
+      guideline 3 ("No Mock Data in Production"). Gate demo data behind an
+      explicit flag and show a full-width banner + "switch to testnet" CTA.
+- [ ] **`forceCancelStale` has no UI and is not on the deployed venue**
+      *(30 min after redeploy)* - the shipped ABI now describes a function
+      the live contract does not have (calling `RESOLUTION_GRACE` on the
+      venue reverts). Users with funds in an unsettled market see no path to
+      recovery. Add the button once the fixed contract is deployed.
+- [ ] **The venue looks dead** *(1 hour)* - only 4 tradable markets, each
+      with ~0.01-0.02 OKB of depth, and the CLOSED tab shows test debris
+      ("Countdown UI test - ignore", two near-duplicate cancelled TSLA
+      markets). Seed deeper two-sided pools and 3-5 fresh short-dated
+      markets before submission day.
+
+---
+
 ## 2. Hurts judging
 
 Not strictly required, but each one is something a judge will notice.
