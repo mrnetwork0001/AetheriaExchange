@@ -11,14 +11,16 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const requested = Number(url.searchParams.get("chainId") ?? "");
+  // Default to mainnet once a venue exists there - external consumers (the
+  // Telegram bot) should follow the launch without a config change.
   const chain =
     requested === xLayer.id
       ? xLayer
       : requested === xLayerTestnet.id
         ? xLayerTestnet
-        : contractAddress(xLayerTestnet.id)
-          ? xLayerTestnet
-          : xLayer;
+        : contractAddress(xLayer.id)
+          ? xLayer
+          : xLayerTestnet;
 
   const venue = contractAddress(chain.id);
   if (!venue) {

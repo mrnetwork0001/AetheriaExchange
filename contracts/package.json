@@ -9,6 +9,7 @@
     "deploy:testnet": "hardhat run scripts/deploy.js --network xlayerTestnet",
     "deploy:mainnet": "hardhat run scripts/deploy.js --network xlayerMainnet",
     "seed:testnet": "hardhat run scripts/seed.js --network xlayerTestnet",
+    "seed:mainnet": "hardhat run scripts/seed.js --network xlayerMainnet",
     "mm:testnet": "hardhat run scripts/market-maker.js --network xlayerTestnet",
     "mm:mainnet": "hardhat run scripts/market-maker.js --network xlayerMainnet",
     "draft:testnet": "hardhat run scripts/pulse-drafter.js --network xlayerTestnet",
