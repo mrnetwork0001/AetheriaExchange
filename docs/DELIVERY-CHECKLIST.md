@@ -29,21 +29,20 @@ recording.** Very little below is new feature work.
 
 These are small, and each one unblocks something bigger.
 
-- [ ] **Fix the resolver staleness bound for dated markets** *(15 min, build)*
-      `RESOLVER_MAX_STALENESS_SEC` (default 2h) blocks **#6 and #10 from ever
-      settling** - they closed more than 2h ago. For a market whose title
-      names a session date, the reading is a fixed historical close and the
-      title-date guard is already strictly stronger, so staleness should not
-      apply. Without this, a cron will run and silently settle nothing.
-      `contracts/scripts/resolver.js:365`
-- [ ] **Settle market #10** *(5 min, verify)* - TSLA closed **$342.27** vs
-      the $340 threshold, so it resolves **YES**, and it has real stake on
-      both sides. This is the autonomous-settlement proof for the demo video.
-      Capture the tx hash before any redeploy.
+- [x] **Fix the resolver staleness bound for dated markets** - done
+      2026-08-15. Staleness now applies only to LIVE adapters; a dated
+      adapter (one named session, fixed historical figure) is exempt because
+      the asOf/title-date guard is strictly stronger. Verified: #10 now
+      evaluates on default settings, while #6 stays correctly blocked.
+- [x] **Settle market #10** - done 2026-08-15 09:48 UTC, autonomously by the
+      Resolver agent. Read $342.27 (as of 2026-08-14) vs $340 → **YES**.
+      tx `0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf`
+      (block 38328469). Recorded in SUBMISSION.md. **Capture this in the demo
+      video before redeploying the venue.**
 - [ ] **Decide #6** *(5 min)* - RWA TVL is $27.41B against a $27.5B
       threshold, inside the 1% dispute band, so the resolver **correctly
-      refuses** it. Either leave it as a live example of the guard working
-      (good story) or cancel-and-refund it.
+      refuses** it. Leaving it is the better story (the guard visibly
+      working); cancel-and-refund if you would rather the venue look tidy.
 - [ ] **Choose the hosting architecture** *(decision, 10 min)* - see the
       note under section 2; it changes what else must be built.
 

@@ -277,6 +277,9 @@ const ADAPTERS = [
     // An official closing price is an exact published number, not an
     // aggregate - only a hair of rounding tolerance is warranted.
     margin: 0.0005,
+    // Returns { value, asOf } for one named session: a fixed historical
+    // figure, so a late pass reads exactly the same number.
+    dated: true,
   },
   {
     name: "X Layer DeFi TVL (USD, DefiLlama)",
@@ -362,8 +365,6 @@ async function main() {
       if (!AUTO_CATEGORIES.has(m.category)) reasons.push("not a PULSE/RWA market");
       if (!allowedCreators.has(m.creator.toLowerCase()))
         reasons.push("creator not allowlisted");
-      if (now - Number(m.endTime) > MAX_STALENESS_SEC)
-        reasons.push("closed too long ago for a live reading");
       if (NEGATION.test(m.title)) reasons.push("non-'above' comparator");
 
       const matched = ADAPTERS.filter((a) =>
@@ -371,6 +372,18 @@ async function main() {
       );
       if (matched.length === 0) reasons.push("no metric adapter");
       if (matched.length > 1) reasons.push("ambiguous metric adapters");
+
+      // Staleness protects LIVE metrics only. A live adapter reads the value
+      // "right now", which drifts away from the value at close, so a late
+      // pass must not settle from it. A dated adapter reads a published
+      // figure for one named session - a fixed historical number that cannot
+      // drift - and the asOf/title-date guard below already refuses anything
+      // but that exact session. Applying staleness there would permanently
+      // block settlement of a market that can still be settled correctly,
+      // which is what stranded markets #6 and #10.
+      const datedReading = matched.length === 1 && matched[0].dated === true;
+      if (!datedReading && now - Number(m.endTime) > MAX_STALENESS_SEC)
+        reasons.push("closed too long ago for a live reading");
 
       const threshold = parseThreshold(m.title);
       if (threshold === null) reasons.push("no parseable threshold");
