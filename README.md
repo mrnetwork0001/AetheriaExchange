@@ -14,8 +14,11 @@ Built for the **X Layer AI Season Hackathon**. Submission details:
 
 | | |
 |---|---|
-| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - live with seeded markets |
-| Mainnet venue (chain 196) | launching after submission |
+| **Live dApp** | **[aetheria.exchange](https://www.aetheria.exchange)** |
+| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
+| First autonomous settlement | [`0x7663a2bf…5333cf`](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) - the resolver read the Nasdaq close and settled onchain, no human in the loop |
+| Agent fleet | running 24/7 (market maker under systemd; drafter and resolver on cron) - watch it live in [AGENT OPS](https://www.aetheria.exchange/?tab=agents) |
+| Mainnet venue (chain 196) | launching before the Launch Grant window closes |
 | X | [@AetheriaEx](https://x.com/AetheriaEx) |
 
 > Unaudited hackathon software on testnet. Prediction markets and spot trades
@@ -113,7 +116,7 @@ chat, replying with tickets and deep-link execute buttons.
 
 ```
 contracts/            Hardhat project
-  contracts/OutcomeMarket.sol     parimutuel venue (8/8 tests passing)
+  contracts/OutcomeMarket.sol     parimutuel venue (11/11 tests passing)
   scripts/deploy.js               deploy + write address/ABI to frontend
   scripts/seed.js                 create demo + PULSE markets
   scripts/market-maker.js         liquidity agent
@@ -140,13 +143,13 @@ Requirements: Node 18+ (Node 22+ recommended).
 # 1. Contracts - compile, test, export the ABI to the frontend
 cd contracts
 npm install
-npm test                  # 8 passing
+npm test                  # 11 passing
 npm run export-abi
 
 # 2. Frontend - runs against the LIVE testnet venue out of the box
 cd ../frontend
 npm install
-npm run dev               # http://localhost:3000
+npm run dev               # http://localhost:3003
 ```
 
 With zero configuration the app reads the deployed testnet venue (markets,
@@ -162,7 +165,9 @@ trade.
 | Variable | Required | Purpose |
 |---|---|---|
 | `AI_PROVIDER` | no | `anthropic` or `0g`; auto-picks by which key is set |
-| `AGENT_LOG_SECRET` | on public hosts | required from agents posting to `/api/agent-log`; unset = open posting (local dev only) |
+| `AGENT_LOG_SECRET` | on public hosts | required from agents posting to `/api/agent-log`; the route fails closed in production without it |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | on serverless hosts | shared store for the AGENT OPS feed - without it, agents and visitors hit different instances and the console looks empty |
+| `NEXT_PUBLIC_SITE_URL` | in production | canonical origin for Open Graph / social cards (e.g. `https://www.aetheria.exchange`) |
 | `ANTHROPIC_API_KEY` | one provider | Claude with schema-guaranteed structured outputs |
 | `ZG_COMPUTE_BASE_URL` | one provider | 0G Compute router, e.g. `https://router-api.0g.ai/v1` |
 | `ZG_COMPUTE_API_KEY` | with 0G | from the 0G Compute dashboard |
@@ -177,7 +182,7 @@ trade.
 |---|---|---|
 | `PRIVATE_KEY` | to deploy | deployer / venue owner / resolver signer |
 | `MM_PRIVATE_KEY` | recommended | dedicated market-maker wallet (falls back to `PRIVATE_KEY`) |
-| `AETHERIA_API_URL` | for agents | frontend base URL (default `http://localhost:3000`) |
+| `AETHERIA_API_URL` | for agents | frontend base URL (default `http://localhost:3003`; production `https://www.aetheria.exchange`) |
 | `AGENT_LOG_SECRET` | on public hosts | shared secret for posting to the AGENT OPS feed; must match the frontend's value |
 | `MM_BUDGET_OKB` etc. | no | agent knobs - see script headers |
 | `DRAFTER_TOPICS` | no | semicolon-separated PULSE topics |
@@ -202,10 +207,15 @@ cd contracts
 npm run deploy:testnet
 npm run seed:testnet
 
-# Agent fleet
+# Agent fleet (manual invocation)
 npm run mm:testnet          # market maker - long-running loop
 npm run draft:testnet       # pulse drafter - run daily (cron)
 npm run resolve:testnet     # resolver - run hourly (cron)
+
+# Production fleet: one command on a VPS installs the market maker under
+# systemd and the drafter/resolver under flock-guarded cron - see
+# docs/DEPLOY.md for the full hosted topology (Vercel + Upstash + VPS).
+sudo bash ops/bootstrap-vps.sh testnet
 
 # Mainnet equivalents: deploy:mainnet, mm:mainnet, draft:mainnet, resolve:mainnet
 ```
@@ -255,10 +265,16 @@ nothing - execution always happens in the user's wallet on the dApp.
 
 ## Persistent memory on 0G Storage
 
-Co-pilot chats are wallet-keyed and survive reloads and account switches.
-localStorage is the hot store; when `ZG_STORAGE_PRIVATE_KEY` is configured, a
-write-behind sync pushes **AES-GCM-encrypted** snapshots to 0G decentralized
-storage and keeps only the blob's root-hash pointer client-side. The server
+Co-pilot chats are wallet-keyed and survive reloads and account switches -
+connect wallet A, chat, switch to wallet B and back: A's conversation
+returns, and the AI uses it for context ("hedge that position").
+
+**Live in production**: localStorage is the hot store, and a write-behind
+sync pushes **AES-GCM-encrypted** snapshots to 0G decentralized storage,
+keeping only the blob's root-hash pointer client-side. This is encrypted
+off-device durability, not yet cross-device sync - the pointer and salt are
+per-browser; a 0G-KV pointer registry with wallet-signature-derived keys is
+the roadmap item that adds portability. The server
 and 0G ever see ciphertext only. Race-safe by construction: per-key epoch
 counters prevent a RESET from being resurrected by an in-flight upload and
 stop stale uploads from overwriting newer snapshots, and persistence is
@@ -307,14 +323,17 @@ economically motivated flow - the only kind the rules count.
 
 ## Engineering quality
 
-- 8/8 contract tests: payout math, refunds, access control, one-sided
-  auto-cancel, double-claim protection.
-- **Five adversarial multi-agent review rounds; 30 verified findings fixed**,
-  including money-losing bugs caught before they shipped: an execution-retry
-  double-spend, missing wallet-chain gating (funds broadcast to the wrong
-  chain), a resolver threshold parser that read "above $50 by" as $50
-  billion, and a wallet-switch chat-memory leak. Each finding was confirmed
-  by an independent adversarial verifier before being fixed.
+- 11/11 contract tests: payout math, refunds, access control, one-sided
+  auto-cancel, double-claim protection, and the permissionless
+  `forceCancelStale` escape hatch (anyone can free stakes from a market left
+  unsettled past a 7-day grace period).
+- **Hardened through repeated adversarial multi-agent review** (the fix
+  commits are the audit trail); confirmed findings fixed include
+  money-losers caught before they shipped: an execution-retry double-spend,
+  missing wallet-chain gating (funds broadcast to the wrong chain), an
+  economically inverted hedge, a threshold parser reading "$12bn" as 1, and
+  a wallet-switch chat-memory leak. Every finding was confirmed by an
+  independent adversarial verifier before being fixed.
 - Every AI output crossing into the execution flow is schema-validated or
   coerced server-side; open-model outputs are never trusted raw.
 - Graceful degradation at every layer: no deployment → labeled preview; no
