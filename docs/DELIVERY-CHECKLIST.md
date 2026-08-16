@@ -1,7 +1,17 @@
 # Aetheria - Delivery Checklist
 
-**Audited 2026-08-15.** Submission deadline **2026-08-21 23:59 UTC (6 days)**.
-Launch Grant volume window closes **2026-08-31**.
+**Audited 2026-08-15; rules re-verified against the official hackathon text
+2026-08-16.** Submission deadline **2026-08-21 23:59 UTC**.
+
+Two rulings that shape priorities:
+- **Mainnet launch is an eligibility REQUIREMENT** ("must ... subsequently
+  launch on the X Layer Mainnet"; failing any requirement = ineligible).
+  The mainnet deploy is not polish - without it there is no prize at all.
+- **Launch Grant reality check**: the first 50K unlocks at **10,000,000
+  USDT** of OKX-DEX-interface volume by Aug 31 23:59 UTC+8. That is not
+  reachable organically in the window and must not consume any remaining
+  effort - the hedge-to-OKX-DEX mechanism is Hackathon Grant narrative
+  (mechanism design + anti-wash discipline), not a projected win.
 
 Compiled from a six-agent audit of contracts, frontend, AI layer, docs and
 ops, plus direct on-chain and live-endpoint checks.
