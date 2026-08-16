@@ -203,6 +203,85 @@ button {
   box-shadow: 0 0 18px rgba(126, 231, 5, 0.25);
 }
 
+/* ── mobile header: hamburger + dropdown ── */
+
+.header-menu {
+  position: relative;
+  display: none;
+}
+
+.menu-btn {
+  width: 42px;
+  height: 42px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.menu-btn span {
+  display: block;
+  width: 16px;
+  height: 1.5px;
+  background: var(--label);
+  transition: transform 0.18s, opacity 0.18s, background 0.18s;
+}
+
+.menu-btn.open span {
+  background: var(--accent);
+}
+
+.menu-btn.open span:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.menu-btn.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-btn.open span:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  min-width: 230px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.65);
+}
+
+.menu-dropdown .chain-badge,
+.menu-dropdown .connect-btn {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .header-right-desktop {
+    display: none;
+  }
+
+  .header-menu {
+    display: block;
+  }
+
+  .brand-logo {
+    height: 38px;
+  }
+}
+
 /* ── hero ── */
 
 .hero {
