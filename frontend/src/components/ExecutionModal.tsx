@@ -87,7 +87,7 @@ function LegStatus({ state, chainId }: { state: LegState; chainId: number }) {
           className="leg-status skipped"
           href={state.url}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener"
           title="Set the amount and confirm the swap on OKX DEX"
         >
           OPENED ON OKX - CONFIRM THERE ↗
@@ -152,7 +152,10 @@ export function ExecutionModal({
   function routeViaInterface() {
     if (!dexTrade || running) return;
     const url = okxInterfaceUrl(dexTrade, dexChainId);
-    window.open(url, "_blank", "noopener,noreferrer");
+    // noopener only - deliberately NOT noreferrer: the Referer origin is the
+    // one signal OKX's analytics can use to attribute this visit to
+    // aetheria.exchange until an official attribution mechanism exists.
+    window.open(url, "_blank", "noopener");
     setDexState({ phase: "external", url });
   }
 
