@@ -163,23 +163,20 @@ Not strictly required, but each one is something a judge will notice.
 > service. Alternatives: back the feed with Redis/Upstash (~half a day), or
 > accept a degraded console and rewrite the claim.
 
-- [ ] **Set `AGENT_LOG_SECRET` in both env files** *(10 min)* - absent from
-      both today, and `/api/agent-log` **fails closed in production**, so
-      agent reports would be rejected even with everything else correct.
-- [ ] **Point `AETHERIA_API_URL` at the real host** *(5 min)* -
-      `contracts/.env` still says `http://localhost:3003`.
+- [x] **Set `AGENT_LOG_SECRET` in both env files** - done; verified 401
+      without / 200 with against production.
+- [x] **Point `AETHERIA_API_URL` at the real host** - done
+      (https://www.aetheria.exchange), verified by live agent reports.
 - [ ] **Fix the port mismatch** *(10 min)* - agents default to 3003,
       `next start` serves 3000, the README says something else again.
-- [ ] **Run the three agents continuously** *(30 min on the VPS)* - the
-      artifacts now exist: `ops/bootstrap-vps.sh` installs a systemd unit
-      for the market maker and /etc/cron.d entries (resolver hourly,
-      drafter daily, flock-guarded), validates contracts/.env, and smoke
-      tests the resolver in dry-run. One command: `sudo bash
-      ops/bootstrap-vps.sh testnet`.
-- [ ] **Fund and separate the market-maker wallet** *(30 min)* -
-      `MM_PRIVATE_KEY` currently equals `PRIVATE_KEY`, so one key is
-      deployer, venue owner, resolver and market maker at once. It also holds
-      only ~0.1 OKB, which is not enough to keep a venue seeded.
+- [x] **Run the three agents continuously** - LIVE 2026-08-16 on the VPS
+      (38.49.213.208, dedicated `aetheria` user). Market maker under
+      systemd (active/enabled), resolver hourly + drafter daily 06:10 UTC
+      under cron. Verified end to end: VPS reports authenticate against
+      production and appear in the AGENT OPS console; the Upstash feed is
+      conclusively shared (events persist across days and instances).
+- [x] **Fund and separate the market-maker wallet** - done: dedicated
+      wallet 0xC82d…5701 with 0.2 OKB, MM sizing tuned to match.
 - [ ] **Add a health check on the agents** *(30 min)* - nothing alerts if the
       fleet dies mid-judging.
 
