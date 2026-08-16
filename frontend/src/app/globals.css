@@ -106,7 +106,10 @@ button {
 
 @media (max-width: 1024px) {
   .main {
-    grid-template-columns: 1fr;
+    /* minmax(0,...) matters: bare 1fr has a min-content floor, so any
+       non-wrapping child (the mobile chip rails) would blow the column
+       wider than the viewport instead of scrolling inside it. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1896,7 +1899,11 @@ button {
 
 /* collapsible co-pilot */
 .main.copilot-closed {
-  grid-template-columns: 1fr;
+  /* minmax(0,...) here too: this rule out-specifies the mobile media query,
+     so a bare 1fr would silently reinstate the min-content floor - but only
+     with the co-pilot closed, which is exactly the state that made it so
+     hard to reproduce. */
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .copilot-close {
@@ -1977,10 +1984,25 @@ button {
   }
 
   /* Chip rows become one-line swipe rails - wrapping chips read as clutter
-     on a narrow screen, a rail reads as designed. */
+     on a narrow screen, a rail reads as designed. max-width is the load-
+     bearing line: without it the rail's min-content width (550px+ of chips)
+     wins against flex stretch and drags the whole layout viewport wider
+     than the phone. */
+  .filter-bar {
+    min-width: 0;
+  }
+
+  /* One fluid column: the desktop grid's 300px card floor overflows a
+     320px phone (264px content area). */
+  .markets-grid {
+    grid-template-columns: 1fr;
+  }
+
   .filter-bar .chip-row {
     flex-wrap: nowrap;
     overflow-x: auto;
+    max-width: 100%;
+    min-width: 0;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 2px;
