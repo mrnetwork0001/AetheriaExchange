@@ -22,7 +22,7 @@ settlement is an onchain transaction anyone can verify.
 | Agent console | [aetheria.exchange/?tab=agents](https://www.aetheria.exchange/?tab=agents) |
 | Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
 | First autonomous settlement | [`0x7663a2bf…5333cf`](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) |
-| GitHub | [mrnetwork0001/AetheriaExchange](https://github.com/mrnetwork0001/AetheriaExchange) |
+| GitHub | [AetheriaEx/AetheriaExchange](https://github.com/AetheriaEx/AetheriaExchange) |
 | X | [@AetheriaEx](https://x.com/AetheriaEx) |
 
 ## The stack, in one paragraph

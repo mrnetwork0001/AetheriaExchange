@@ -2,7 +2,7 @@
 
 import { useVenueChain } from "@/hooks/useVenueChain";
 
-const REPO = "https://github.com/mrnetwork0001/AetheriaExchange";
+const REPO = "https://github.com/AetheriaEx/AetheriaExchange";
 
 const PRODUCT = [
   { text: "Outcome Markets", href: "#markets" },

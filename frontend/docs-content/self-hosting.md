@@ -1,8 +1,7 @@
 # Self-Hosting & Deployment
 
 Everything is open source and reproducible from a clone. The production
-topology and the exact steps live in the repo
-([docs/DEPLOY.md](https://github.com/mrnetwork0001/AetheriaExchange/blob/main/docs/DEPLOY.md));
+topology and the exact steps live in [`docs/DEPLOY.md`](https://github.com/AetheriaEx/AetheriaExchange/blob/main/docs/DEPLOY.md);
 this page is the map.
 
 ## The production topology
@@ -29,7 +28,7 @@ correct on a single server and in local dev).
 ## Quick start (local)
 
 ```bash
-git clone https://github.com/mrnetwork0001/AetheriaExchange.git
+git clone https://github.com/AetheriaEx/AetheriaExchange.git
 cd AetheriaExchange/contracts && npm install
 npm test                 # 11 passing
 npm run export-abi
