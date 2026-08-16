@@ -217,10 +217,13 @@ one discounts the rest.
       empty API key, no verify script.
 - [ ] **Hide or clean the test debris** *(15 min)* - cancelled test markets are
       publicly visible on the venue judges are invited to browse.
-- [ ] **Activate 0G Storage** *(30-45 min)* - fund a 0G testnet wallet, set
-      `ZG_STORAGE_PRIVATE_KEY`. Makes the "decentralized AI stack" claim
-      literally true. Do **not** claim cross-device: the pointer still lives
-      in localStorage.
+- [x] **Activate 0G Storage** - LIVE 2026-08-16. Dedicated burner wallet
+      (0xDaF5…E967, faucet-funded 0.5 OG), key in Vercel only. Verified
+      end-to-end through production: upload returned root
+      `0xecb32ad0…140c` and the same bytes downloaded back. Claim
+      "encrypted memory on 0G Storage" - NOT cross-device (pointer + salt
+      are per-browser; 0G-KV registry + signature-derived keys are the
+      roadmap items that add portability).
 - [ ] **Fix the Telegram bot's env loading** *(45 min)* - `bot.mjs` never
       loads dotenv, so the documented `bots/.env` is ignored.
 - [ ] **Make sure @AetheriaEx is not a zero-post shell** *(1-2 hours across
