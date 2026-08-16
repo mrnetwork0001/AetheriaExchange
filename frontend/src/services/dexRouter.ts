@@ -23,6 +23,9 @@ export function okxInterfaceUrl(trade: DexTrade, chainId: number): string {
     outputChain: String(interfaceChain),
     inputCurrency: currency(tokenIn, trade.tokenIn),
     outputCurrency: currency(tokenOut, trade.tokenOut),
+    // Verified against the live interface: inputAmount prefills the From
+    // field (amount/fromAmount/exactAmount do nothing).
+    inputAmount: trade.amount,
   });
   return `https://web3.okx.com/dex-swap?${params.toString()}`;
 }
