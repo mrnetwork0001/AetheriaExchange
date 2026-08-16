@@ -15,6 +15,7 @@ Built for the **X Layer AI Season Hackathon**. Submission details:
 | | |
 |---|---|
 | **Live dApp** | **[aetheria.exchange](https://www.aetheria.exchange)** |
+| Documentation | [aetheria.exchange/docs](https://www.aetheria.exchange/docs) |
 | Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
 | First autonomous settlement | [`0x7663a2bf…5333cf`](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) - the resolver read the Nasdaq close and settled onchain, no human in the loop |
 | Agent fleet | running 24/7 (market maker under systemd; drafter and resolver on cron) - watch it live in [AGENT OPS](https://www.aetheria.exchange/?tab=agents) |
