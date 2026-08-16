@@ -1938,6 +1938,67 @@ button {
   box-shadow: 0 0 32px rgba(160, 107, 255, 0.55);
 }
 
+/* ── mobile markets head: stacked tabs, full-width CTA, swipe chips ── */
+
+@media (max-width: 640px) {
+  .markets-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .tab-bar {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 11px 4px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .markets-head-right {
+    width: 100%;
+  }
+
+  .markets-head-right .connect-btn {
+    width: 100%;
+    padding: 12px 0;
+    text-align: center;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  /* Chip rows become one-line swipe rails - wrapping chips read as clutter
+     on a narrow screen, a rail reads as designed. */
+  .filter-bar .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .filter-bar .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-bar .chip {
+    flex-shrink: 0;
+  }
+
+  .status-chips {
+    margin-left: 0;
+  }
+}
+
 /* wrong-network banner */
 .network-banner {
   display: flex;
