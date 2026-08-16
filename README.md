@@ -104,6 +104,27 @@ The AI is visible, not just claimed:
 | **Market Maker** | *Makes.* Seeds two-sided liquidity and tops up thin sides under hard budget caps; opens fresh markets at AI-estimated fair odds via `/api/ai/odds` | `contracts/scripts/market-maker.js` (loop) |
 | **Resolver** | *Settles.* Parses the drafter's machine-resolvable questions, fetches the metric from public data, resolves onchain - and refuses to guess (strict guards, manual list for everything else) | `contracts/scripts/resolver.js` (cron) |
 
+### How the fleet runs
+
+The four agents are deliberately not all "always on" - each runs on the
+schedule its job actually needs, and the AGENT OPS console reports that
+honestly rather than pretending otherwise:
+
+| Agent | Cadence | In production |
+|---|---|---|
+| **Co-Pilot** | per request | serverless, in the page - always available |
+| **Market Maker** | continuous loop | systemd service on the VPS; heartbeats every few minutes; spend capped per run with a hard wallet floor |
+| **Resolver** | hourly, on the hour | cron: wakes, settles what is mechanically checkable, lists the rest for human review, exits |
+| **Pulse Drafter** | daily 06:10 UTC | cron: drafts and deploys the day's markets, then exits; equity topics are skipped on non-US-trading days |
+
+Every agent posts each decision to `/api/agent-log`, and the console's
+roster marks an agent **ONLINE** for the minutes around a report, then shows
+`LAST 52M AGO` - elapsed time since it last worked. So the resolver reading
+"LAST 52M AGO" at 07:53 is not a fault: its last pass was the 07:00 cron,
+exactly on schedule, and it will flip back to ONLINE at 08:00. Watching the
+timestamps track the cron schedule is the proof the fleet is real - four
+permanently green dots would be the suspicious display, not this one.
+
 The AI layer runs on a **provider abstraction**: Anthropic (schema-guaranteed
 structured outputs) or **0G Compute** (decentralized inference via its
 OpenAI-compatible router), selected per environment. Every AI-produced intent
