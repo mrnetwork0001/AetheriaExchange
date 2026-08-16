@@ -98,8 +98,11 @@ const MAGNITUDES = {
 // orders of magnitude off - with the dispute band shrinking to match, so
 // nothing downstream catches it.
 function parseThreshold(title) {
+  // "exceeds X" is accepted as a synonym of "above X" (same strict-greater
+  // comparator) because LLM-drafted titles use it - the drafting prompt now
+  // asks for the literal "above", but deployed titles are immutable.
   const m = title.match(
-    /above\s+\$?\s*([\d,]+(?:\.\d+)?)([a-zA-Z]*)(?:\s+([a-zA-Z]+))?/i
+    /(?:above|exceeds?)\s+\$?\s*([\d,]+(?:\.\d+)?)([a-zA-Z]*)(?:\s+([a-zA-Z]+))?/i
   );
   if (!m) return null;
   const base = Number(m[1].replace(/,/g, ""));
