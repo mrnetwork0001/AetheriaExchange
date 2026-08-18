@@ -11,6 +11,15 @@ same formula - only the ghost texture differs:
 |---|---|---|---|
 | **Banner** | orbit arc cropped off an edge | profile banners, covers, identity | 2026-08-13 |
 | **Announcement** | mono ticker line along the bottom | post images, feature and launch announcements | 2026-08-14 |
+| **Lockup** | none - full logo mark left, text block right | milestone posts, launch cards, anywhere the brand itself is the news | 2026-08-17 |
+
+The Lockup layout is the one exception to the no-logo rule of the flier
+formula: the mark IS the composition. Structure: logo mark large on the
+left; right text block = gold mono kicker, the two-line tagline
+(white/grey, green-dot period), a 1px green-outlined mono badge for the
+status line (e.g. LIVE ON X LAYER TESTNET), and a small white mono URL
+line beneath. Square 1200x1200. Prompt in the launch-day session notes -
+swap the badge text and URL line per occasion.
 
 ---
 
