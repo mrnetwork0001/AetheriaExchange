@@ -46,6 +46,7 @@ export function StatFooter() {
   const resources = [
     { text: "GitHub", href: REPO },
     { text: "Docs", href: "/docs" },
+    { text: "Settlement Receipts", href: "/receipts" },
     { text: "X Layer Docs", href: "https://web3.okx.com/xlayer/docs" },
     venue
       ? {

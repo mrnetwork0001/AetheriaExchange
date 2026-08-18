@@ -57,6 +57,7 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
         <nav className="docs-header-links">
           <Link href="/">APP</Link>
           <Link href="/?tab=agents">AGENT OPS</Link>
+          <Link href="/receipts">RECEIPTS</Link>
           <a
             href="https://github.com/AetheriaEx/AetheriaExchange"
             target="_blank"
