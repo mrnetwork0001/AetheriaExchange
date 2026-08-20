@@ -16,7 +16,7 @@ const STEPS = [
   {
     n: "03",
     title: "EXECUTE",
-    body: "One click, two signatures, zero custody. Each leg is signed in your own wallet and confirmed on X Layer with a public OKLink receipt.",
+    body: "One click, two signatures, zero custody. Each leg is signed in your own wallet and confirmed on X Layer with a public onchain receipt.",
     detail: "NON-CUSTODIAL · 1-CLICK · ON-CHAIN",
   },
 ];

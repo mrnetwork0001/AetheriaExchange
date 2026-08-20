@@ -113,7 +113,7 @@ export function ReceiptsView() {
           Every market on Aetheria ends in a transaction: a resolution that
           pays winners from the losing pool, or a cancellation that refunds
           every stake. Nothing here is self-reported - each receipt links to
-          the settling transaction on OKLink.
+          the settling transaction on the X Layer explorer.
         </p>
 
         {failed && (
@@ -191,7 +191,7 @@ export function ReceiptsView() {
                   <div className="receipt-verify">
                     {r.txUrl ? (
                       <a href={r.txUrl} target="_blank" rel="noreferrer">
-                        VERIFY ON OKLINK ↗
+                        VERIFY ONCHAIN ↗
                       </a>
                     ) : data.indexing ? (
                       <span className="receipt-pending">LOCATING TX…</span>
