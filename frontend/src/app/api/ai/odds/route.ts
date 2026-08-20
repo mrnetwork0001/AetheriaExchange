@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { aiChatJson } from "@/lib/aiChat";
 import { takeRate } from "@/lib/rateBudget";
+import { liveReadingFor } from "@/lib/liveMetrics";
 
 export const runtime = "nodejs";
 // See the intent route: give inference room rather than let the platform
@@ -40,44 +41,6 @@ Given a market question, return yesProbability - your best estimate of the proba
 Be calibrated: use base rates, stay between 0.05 and 0.95 unless the question is near-certain, and never let the wording's framing bias you.
 When a "liveData" field is present it is a real current reading for the asset in question - anchor your estimate on it (distance from the threshold, and how much time remains) and cite the number in your rationale.`;
 
-// Equity questions are far better calibrated with the current quote in hand,
-// and it is one keyless request. Tickers are matched case-sensitively so
-// ordinary words are never mistaken for symbols.
-const EQUITY_TICKERS = [
-  "TSLA",
-  "AAPL",
-  "NVDA",
-  "MSFT",
-  "META",
-  "GOOGL",
-  "AMZN",
-  "COIN",
-  "SPY",
-];
-
-async function equityLiveData(title: string): Promise<string | null> {
-  const hits = EQUITY_TICKERS.filter((t) =>
-    new RegExp(`\\b${t}x?\\b`).test(title)
-  );
-  if (hits.length !== 1) return null;
-  try {
-    const res = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${hits[0]}?interval=1d&range=1d`,
-      {
-        headers: { "User-Agent": "Mozilla/5.0" },
-        signal: AbortSignal.timeout(6000),
-      }
-    );
-    if (!res.ok) return null;
-    const j = await res.json();
-    const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    if (!Number.isFinite(price)) return null;
-    return `${hits[0]} is trading at $${Number(price).toFixed(2)} right now.`;
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(req: Request) {
   let body: { title?: string; category?: string };
   try {
@@ -109,7 +72,11 @@ export async function POST(req: Request) {
     });
   }
 
-  const liveData = await equityLiveData(title);
+  // Anchors the estimate on the SAME source the resolver will settle
+  // against, for every metric our agents write markets on - not just
+  // equities. Without it the model prices PULSE/RWA questions blind, and the
+  // market maker then seeds real OKB at a guessed ratio.
+  const liveData = await liveReadingFor(title);
 
   const result = await aiChatJson({
     system: SYSTEM_PROMPT,
