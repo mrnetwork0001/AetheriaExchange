@@ -123,6 +123,61 @@ async function stakeIfAffordable(venue, wallet, state, marketId, isYes, amount) 
   ops(`stake ${isYes ? "YES" : "NO"}`, `market #${marketId} ← ${fmt(amount)} · depth provision`);
 }
 
+// Collect the bot's own settled positions. Without this the maker stakes
+// forever and never takes anything back: winnings and refunds sit in the
+// contract until a human connects the bot's wallet and claims by hand, and
+// the working balance only ever falls. Recovered capital also funds the next
+// markets, so a modest wallet can keep making markets indefinitely.
+//
+// claimPayout reverts on a zero payout, so mirror its conditions exactly
+// rather than calling speculatively: settled, not already claimed, and a
+// stake that is actually owed something (any stake if cancelled; a stake on
+// the winning side if resolved).
+async function claimSettled(venue, wallet, count) {
+  let claimedCount = 0;
+  let recovered = 0n;
+  for (let id = 0; id < count && !stopping; id++) {
+    try {
+      const m = await venue.getMarket(id);
+      const status = Number(m.status);
+      if (status === 0) continue;
+
+      if (await venue.claimed(id, wallet.address)) continue;
+
+      const yesStake = await venue.yesStakeOf(id, wallet.address);
+      const noStake = await venue.noStakeOf(id, wallet.address);
+      const owed =
+        status === 2 // Cancelled - both sides refund in full
+          ? yesStake + noStake
+          : m.outcome
+            ? yesStake
+            : noStake;
+      if (owed === 0n) continue;
+
+      const before = await hre.ethers.provider.getBalance(wallet.address);
+      const tx = await venue.claimPayout(id);
+      await tx.wait();
+      const after = await hre.ethers.provider.getBalance(wallet.address);
+      // Net of gas, so this never overstates what came back.
+      const delta = after > before ? after - before : 0n;
+      recovered += delta;
+      claimedCount++;
+      log(
+        `market #${id}: claimed ${fmt(delta)} (${status === 2 ? "refund" : "winnings"}) (${tx.hash})`
+      );
+    } catch (err) {
+      log(`market #${id}: claim failed: ${err.shortMessage ?? err.message}`);
+    }
+  }
+  if (claimedCount > 0) {
+    ops(
+      "claim",
+      `${claimedCount} settled market(s) · ${fmt(recovered)} returned to the book`
+    );
+  }
+  return recovered;
+}
+
 async function main() {
   const chainId = String(hre.network.config.chainId);
   const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
@@ -149,6 +204,11 @@ async function main() {
     }
 
     const now = Math.floor(Date.now() / 1000);
+
+    // Sweep settled positions before staking: recovered capital is spendable
+    // on this same pass, and the budget counts gross deployment, so claiming
+    // first is what lets a small wallet keep working a rotating book.
+    if (count > 0) await claimSettled(venue, wallet, count);
 
     // One market's failure must never starve the rest of the book -
     // each market gets its own fault boundary.
