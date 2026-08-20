@@ -527,7 +527,10 @@
   ],
   "chains": {
     "196": {
-      "address": ""
+      "address": "0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d",
+      "deploymentBlock": 68469454,
+      "deployedAt": "2026-08-20T15:08:13.667Z",
+      "deployer": "0xc742AdA2872a042dD36D2E706907b4036968960C"
     },
     "1952": {
       "address": "0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d",
