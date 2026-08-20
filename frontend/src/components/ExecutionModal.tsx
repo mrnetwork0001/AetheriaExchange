@@ -48,7 +48,8 @@ type LegState =
   | { phase: "idle" }
   | { phase: "pending"; note?: string }
   | { phase: "confirmed"; hash: string }
-  | { phase: "error"; reason: string }
+  // A reverted tx is an error that still has a hash worth inspecting.
+  | { phase: "error"; reason: string; hash?: string }
   | { phase: "skipped"; reason: string }
   // Hedge routed to the OKX DEX interface (the Launch-Grant-eligible path);
   // execution completes there, outside this modal.
@@ -76,7 +77,19 @@ function LegStatus({ state, chainId }: { state: LegState; chainId: number }) {
         </a>
       );
     case "error":
-      return <span className="leg-status error">{state.reason}</span>;
+      return state.hash ? (
+        <a
+          className="leg-status error"
+          href={explorerTxUrl(chainId, state.hash)}
+          target="_blank"
+          rel="noreferrer"
+          title="Inspect the failed transaction"
+        >
+          {state.reason} ↗
+        </a>
+      ) : (
+        <span className="leg-status error">{state.reason}</span>
+      );
     case "skipped":
       return <span className="leg-status skipped">{state.reason}</span>;
     case "external":
@@ -215,7 +228,16 @@ export function ExecutionModal({
               chainId,
             });
             setOutcomeState({ phase: "pending", note: "CONFIRMING ON X LAYER…" });
-            await publicClient?.waitForTransactionReceipt({ hash });
+            // waitForTransactionReceipt RESOLVES for a reverted tx - only the
+            // receipt's status says whether it succeeded. Without this check a
+            // revert is reported as a confirmed position.
+            const receipt = await publicClient?.waitForTransactionReceipt({
+              hash,
+            });
+            if (receipt && receipt.status !== "success") {
+              setOutcomeState({ phase: "error", reason: "TX REVERTED", hash });
+              return;
+            }
             setOutcomeState({ phase: "confirmed", hash });
             outcomePlaced = true;
           } catch (err: any) {
@@ -271,10 +293,22 @@ export function ExecutionModal({
                   functionName: "approve",
                   args: [approval.spender, BigInt(amountBaseUnits)],
                 }),
-                chainId,
+                // The swap was quoted for dexChainId, so both legs of it must
+                // be sent there - `chainId` is the VENUE chain and can differ.
+                chainId: dexChainId,
               });
               setDexState({ phase: "pending", note: "CONFIRMING APPROVAL…" });
-              await publicClient.waitForTransactionReceipt({ hash: approveHash });
+              const approveReceipt =
+                await publicClient.waitForTransactionReceipt({
+                  hash: approveHash,
+                });
+              // Abort before broadcasting the swap: on a reverted approval the
+              // transferFrom cannot succeed, so sending it would just burn a
+              // second failed transaction.
+              if (approveReceipt.status !== "success") {
+                setDexState({ phase: "error", reason: "APPROVAL REVERTED" });
+                return;
+              }
             }
           }
 
@@ -283,10 +317,16 @@ export function ExecutionModal({
             to: prep.swap.tx.to,
             data: prep.swap.tx.data,
             value: prep.swap.tx.value,
-            chainId,
+            chainId: dexChainId,
           });
           setDexState({ phase: "pending", note: "CONFIRMING ON X LAYER…" });
-          await publicClient?.waitForTransactionReceipt({ hash });
+          const swapReceipt = await publicClient?.waitForTransactionReceipt({
+            hash,
+          });
+          if (swapReceipt && swapReceipt.status !== "success") {
+            setDexState({ phase: "error", reason: "SWAP REVERTED", hash });
+            return;
+          }
           setDexState({ phase: "confirmed", hash });
         } catch (err: any) {
           setDexState({
