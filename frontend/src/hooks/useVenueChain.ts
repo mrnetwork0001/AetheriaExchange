@@ -30,8 +30,14 @@ export function useVenueChain(): VenueChain {
   const { chainId: walletChainId, isConnected } = useAccount();
 
   const walletVenue = contractAddress(walletChainId);
-  const fallback =
-    SUPPORTED_CHAINS.find((c) => contractAddress(c.id) !== null) ?? null;
+  // Prefer a mainnet venue whenever one exists - matching the precedence the
+  // API routes already apply. Array order must NOT decide this: the moment
+  // mainnet deploys, both chains have an address, and a bare `find` over
+  // SUPPORTED_CHAINS would pin every disconnected visitor (i.e. anyone
+  // opening the site cold) to the testnet venue while the APIs served
+  // mainnet.
+  const venues = SUPPORTED_CHAINS.filter((c) => contractAddress(c.id) !== null);
+  const fallback = venues.find((c) => !c.testnet) ?? venues[0] ?? null;
 
   const chainId = walletVenue
     ? (walletChainId as number)
