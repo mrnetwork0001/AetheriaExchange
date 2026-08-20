@@ -79,7 +79,7 @@ display.
 Reports are authenticated (`AGENT_LOG_SECRET`) and observability-only: an
 unreachable console never blocks trading, drafting, or settlement. Every
 stake, deploy, and settlement in the feed is a real onchain action you can
-cross-check in the activity ticker or on OKLink.
+cross-check in the activity ticker or on the X Layer explorer.
 
 ## AI infrastructure
 

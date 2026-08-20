@@ -16,8 +16,8 @@ Built for the **X Layer AI Season Hackathon**. Submission details:
 |---|---|
 | **Live dApp** | **[aetheria.exchange](https://www.aetheria.exchange)** |
 | Documentation | [aetheria.exchange/docs](https://www.aetheria.exchange/docs) |
-| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
-| First autonomous settlement | [`0x7663a2bf…5333cf`](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) - the resolver read the Nasdaq close and settled onchain, no human in the loop |
+| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
+| First autonomous settlement | [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) - the resolver read the Nasdaq close and settled onchain, no human in the loop |
 | Agent fleet | running 24/7 (market maker under systemd; drafter and resolver on cron) - watch it live in [AGENT OPS](https://www.aetheria.exchange/?tab=agents) |
 | Mainnet venue (chain 196) | launching before the Launch Grant window closes |
 | X | [@AetheriaEx](https://x.com/AetheriaEx) |
@@ -59,7 +59,7 @@ Built for the **X Layer AI Season Hackathon**. Submission details:
    the bet on the venue, and the hedge via a prefilled **OKX DEX interface
    deep link** (the Launch-Grant-eligible path) or in-app aggregator-API
    routing as a fallback (with automatic ERC-20 allowance handling). Every
-   leg links to its OKLink confirmation. Keys never leave the wallet.
+   leg links to its onchain confirmation. Keys never leave the wallet.
 4. **Track.** Positions with live payout estimates and 1-click claims, a
    real-time on-chain activity ticker, market detail views with orderflow,
    and wallet-keyed persistent chat memory.
@@ -365,7 +365,7 @@ economically motivated flow - the only kind the rules count.
 ## Roadmap
 
 **Launch window**
-- Mainnet launch on X Layer (chain 196) + OKLink contract verification
+- Mainnet launch on X Layer (chain 196) + verified contract source
 - Hosted deployment + activated @AetheriaEx presence
 
 **Mass-market onboarding**
