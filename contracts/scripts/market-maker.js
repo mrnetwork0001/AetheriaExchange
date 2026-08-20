@@ -49,7 +49,11 @@ const BUDGET = parseEther(process.env.MM_BUDGET_OKB ?? "3");
 const SEED = parseEther(process.env.MM_SEED_OKB ?? "0.05");
 const MIN_SIDE = parseEther(process.env.MM_MIN_SIDE_OKB ?? "0.1");
 const MAX_STAKE = parseEther(process.env.MM_MAX_STAKE_OKB ?? "0.15");
-const GAS_RESERVE = parseEther("0.02");
+// Kept well clear of real X Layer gas: post-Jovian a stake costs ~2e-6 OKB
+// at 0.02 gwei, so the default still covers thousands of transactions. It is
+// env-tunable because a reserve larger than a modestly funded wallet silently
+// disables the bot entirely - it can never clear amount + reserve.
+const GAS_RESERVE = parseEther(process.env.MM_GAS_RESERVE_OKB ?? "0.005");
 const INTERVAL_MS = Number(process.env.MM_INTERVAL_SEC ?? "60") * 1000;
 // Don't take positions in markets about to close - the bot can't exit.
 const CLOSE_BUFFER_SEC = 15 * 60;
@@ -173,7 +177,14 @@ async function main() {
             (SEED > MIN_SIDE ? SEED : MIN_SIDE) * 2n;
           if (BUDGET - state.spent < minTotal) continue;
           const balance = await hre.ethers.provider.getBalance(wallet.address);
-          if (balance < minTotal + GAS_RESERVE) continue;
+          if (balance < minTotal + GAS_RESERVE) {
+            // Never skip silently: an underfunded wallet otherwise looks like
+            // a healthy bot that simply never trades.
+            log(
+              `market #${id}: cannot bootstrap - balance ${fmt(balance)} under ${fmt(minTotal)} + ${fmt(GAS_RESERVE)} reserve`
+            );
+            continue;
+          }
 
           const p = (await fairYesProb(m.title)) ?? 0.5;
           const pPct = BigInt(Math.round(p * 100));
