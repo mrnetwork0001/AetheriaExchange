@@ -1,6 +1,7 @@
 "use client";
 
 import { useVenueChain } from "@/hooks/useVenueChain";
+import { explorerAddressUrl, explorerBaseUrl } from "@/lib/chains";
 
 const REPO = "https://github.com/AetheriaEx/AetheriaExchange";
 
@@ -12,7 +13,6 @@ const PRODUCT = [
 ];
 
 const ECOSYSTEM = [
-  { text: "X Layer Explorer", href: "https://www.oklink.com/xlayer-test" },
   { text: "OKX Web3 Wallet", href: "https://web3.okx.com" },
   { text: "OKX DEX", href: "https://web3.okx.com/dex-swap" },
   { text: "X Layer Faucet", href: "https://web3.okx.com/xlayer/faucet" },
@@ -38,10 +38,13 @@ export function StatFooter() {
   // The venue link always points at the chain that actually has the venue,
   // whatever chain the visitor's wallet is parked on.
   const { chainId, address: venue } = useVenueChain();
-  const explorerBase =
-    chainId === 196
-      ? "https://www.oklink.com/xlayer"
-      : "https://www.oklink.com/xlayer-test";
+
+  // The explorer link follows the venue chain, so it never sends a visitor
+  // to the wrong network's explorer once mainnet is the live venue.
+  const ecosystem = [
+    { text: "X Layer Explorer", href: explorerBaseUrl(chainId ?? 1952) },
+    ...ECOSYSTEM,
+  ];
 
   const resources = [
     { text: "GitHub", href: REPO },
@@ -51,7 +54,7 @@ export function StatFooter() {
     venue
       ? {
           text: "Venue Contract",
-          href: `${explorerBase}/address/${venue}`,
+          href: explorerAddressUrl(chainId ?? 1952, venue),
         }
       : { text: "Venue Contract - deploying", href: null },
   ];
@@ -108,7 +111,7 @@ export function StatFooter() {
         <div className="footer-col">
           <span className="label">ECOSYSTEM</span>
           <nav>
-            {ECOSYSTEM.map((l) => (
+            {ecosystem.map((l) => (
               <a key={l.text} href={l.href} target="_blank" rel="noreferrer">
                 {l.text}
               </a>

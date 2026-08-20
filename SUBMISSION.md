@@ -10,8 +10,8 @@ click, fully self-custodied.
 | Live dApp | **[aetheria.exchange](https://www.aetheria.exchange)** |
 | GitHub | https://github.com/AetheriaEx/AetheriaExchange |
 | X account | https://x.com/AetheriaEx |
-| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
-| First autonomous settlement | [`0x7663a2bf…5333cf`](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) - see below |
+| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
+| First autonomous settlement | [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) - see below |
 | Mainnet venue (chain 196) | _(address - added at launch)_ |
 
 ---
@@ -93,7 +93,7 @@ the loop:
 > **"TSLA closes above $340 on 2026-08-14 (Nasdaq official close)"**
 > Reading: `US equity daily close (Yahoo Finance) = 342.27 (as of 2026-08-14)`
 > vs threshold `340` → **resolved YES**
-> tx [`0x7663a2bf…5333cf`](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf)
+> tx [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf)
 > · stake on both sides (0.0104 YES / 0.0100 NO), so a real winner was paid.
 
 In the same pass it **refused** to settle market #6 ("RWA protocols total TVL
@@ -162,7 +162,7 @@ User Wallet ── AI Intent Engine (Claude, schema-constrained)
 
 ## Roadmap (post-hackathon)
 
-- **Mainnet + verification**: X Layer chain 196 launch, OKLink-verified source.
+- **Mainnet + verification**: X Layer chain 196 launch, verified contract source.
 - **Mass-market onboarding**: social-login embedded wallets (Privy-class)
   with sponsored gas - Polymarket-style Google sign-in without breaking
   self-custody - plus WalletConnect for mobile.

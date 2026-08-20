@@ -7,7 +7,7 @@ ambiguous, refuse and escalate to a human. Never guess.**
 Both behaviors have already happened in production. The resolver settled
 *"TSLA closes above $340 on 2026-08-14"* autonomously from the official
 Nasdaq close ($342.27 → YES,
-[tx](https://www.oklink.com/xlayer-test/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf))
+[tx](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf))
 - and in the same pass it **refused** an RWA market whose reading landed
 0.3% from its threshold, listing it for human review instead. Both are the
 system working as designed.

@@ -1,8 +1,16 @@
 "use client";
 
+import { explorerAddressUrl, explorerBaseUrl } from "@/lib/chains";
+import { contractAddress } from "@/lib/contract";
+
 // Last line of defence. Without this, any uncaught render error replaces the
 // whole venue with Next's bare "Application error" text - a total loss of
-// the page for what is usually a recoverable component fault.
+// the page for what is usually a recoverable component fault. Kept to pure
+// imports - no hooks, no fetches - so this page cannot fail the same way the
+// one it is rescuing did.
+const VENUE_CHAIN = contractAddress(196) ? 196 : 1952;
+const VENUE = contractAddress(VENUE_CHAIN);
+
 export default function Error({
   error,
   reset,
@@ -38,7 +46,11 @@ export default function Error({
           <a
             className="chip"
             style={{ display: "inline-flex", alignItems: "center" }}
-            href="https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d"
+            href={
+              VENUE
+                ? explorerAddressUrl(VENUE_CHAIN, VENUE)
+                : explorerBaseUrl(VENUE_CHAIN)
+            }
             target="_blank"
             rel="noreferrer"
           >

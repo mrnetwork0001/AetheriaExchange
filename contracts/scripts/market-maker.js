@@ -49,7 +49,11 @@ const BUDGET = parseEther(process.env.MM_BUDGET_OKB ?? "3");
 const SEED = parseEther(process.env.MM_SEED_OKB ?? "0.05");
 const MIN_SIDE = parseEther(process.env.MM_MIN_SIDE_OKB ?? "0.1");
 const MAX_STAKE = parseEther(process.env.MM_MAX_STAKE_OKB ?? "0.15");
-const GAS_RESERVE = parseEther("0.02");
+// Kept well clear of real X Layer gas: post-Jovian a stake costs ~2e-6 OKB
+// at 0.02 gwei, so the default still covers thousands of transactions. It is
+// env-tunable because a reserve larger than a modestly funded wallet silently
+// disables the bot entirely - it can never clear amount + reserve.
+const GAS_RESERVE = parseEther(process.env.MM_GAS_RESERVE_OKB ?? "0.005");
 const INTERVAL_MS = Number(process.env.MM_INTERVAL_SEC ?? "60") * 1000;
 // Don't take positions in markets about to close - the bot can't exit.
 const CLOSE_BUFFER_SEC = 15 * 60;
@@ -119,6 +123,61 @@ async function stakeIfAffordable(venue, wallet, state, marketId, isYes, amount) 
   ops(`stake ${isYes ? "YES" : "NO"}`, `market #${marketId} ← ${fmt(amount)} · depth provision`);
 }
 
+// Collect the bot's own settled positions. Without this the maker stakes
+// forever and never takes anything back: winnings and refunds sit in the
+// contract until a human connects the bot's wallet and claims by hand, and
+// the working balance only ever falls. Recovered capital also funds the next
+// markets, so a modest wallet can keep making markets indefinitely.
+//
+// claimPayout reverts on a zero payout, so mirror its conditions exactly
+// rather than calling speculatively: settled, not already claimed, and a
+// stake that is actually owed something (any stake if cancelled; a stake on
+// the winning side if resolved).
+async function claimSettled(venue, wallet, count) {
+  let claimedCount = 0;
+  let recovered = 0n;
+  for (let id = 0; id < count && !stopping; id++) {
+    try {
+      const m = await venue.getMarket(id);
+      const status = Number(m.status);
+      if (status === 0) continue;
+
+      if (await venue.claimed(id, wallet.address)) continue;
+
+      const yesStake = await venue.yesStakeOf(id, wallet.address);
+      const noStake = await venue.noStakeOf(id, wallet.address);
+      const owed =
+        status === 2 // Cancelled - both sides refund in full
+          ? yesStake + noStake
+          : m.outcome
+            ? yesStake
+            : noStake;
+      if (owed === 0n) continue;
+
+      const before = await hre.ethers.provider.getBalance(wallet.address);
+      const tx = await venue.claimPayout(id);
+      await tx.wait();
+      const after = await hre.ethers.provider.getBalance(wallet.address);
+      // Net of gas, so this never overstates what came back.
+      const delta = after > before ? after - before : 0n;
+      recovered += delta;
+      claimedCount++;
+      log(
+        `market #${id}: claimed ${fmt(delta)} (${status === 2 ? "refund" : "winnings"}) (${tx.hash})`
+      );
+    } catch (err) {
+      log(`market #${id}: claim failed: ${err.shortMessage ?? err.message}`);
+    }
+  }
+  if (claimedCount > 0) {
+    ops(
+      "claim",
+      `${claimedCount} settled market(s) · ${fmt(recovered)} returned to the book`
+    );
+  }
+  return recovered;
+}
+
 async function main() {
   const chainId = String(hre.network.config.chainId);
   const config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
@@ -145,6 +204,11 @@ async function main() {
     }
 
     const now = Math.floor(Date.now() / 1000);
+
+    // Sweep settled positions before staking: recovered capital is spendable
+    // on this same pass, and the budget counts gross deployment, so claiming
+    // first is what lets a small wallet keep working a rotating book.
+    if (count > 0) await claimSettled(venue, wallet, count);
 
     // One market's failure must never starve the rest of the book -
     // each market gets its own fault boundary.
@@ -173,7 +237,14 @@ async function main() {
             (SEED > MIN_SIDE ? SEED : MIN_SIDE) * 2n;
           if (BUDGET - state.spent < minTotal) continue;
           const balance = await hre.ethers.provider.getBalance(wallet.address);
-          if (balance < minTotal + GAS_RESERVE) continue;
+          if (balance < minTotal + GAS_RESERVE) {
+            // Never skip silently: an underfunded wallet otherwise looks like
+            // a healthy bot that simply never trades.
+            log(
+              `market #${id}: cannot bootstrap - balance ${fmt(balance)} under ${fmt(minTotal)} + ${fmt(GAS_RESERVE)} reserve`
+            );
+            continue;
+          }
 
           const p = (await fairYesProb(m.title)) ?? 0.5;
           const pPct = BigInt(Math.round(p * 100));

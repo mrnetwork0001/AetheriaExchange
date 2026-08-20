@@ -41,7 +41,7 @@ A ticket can carry:
 One click, and each leg becomes a transaction **signed in your own wallet**.
 The app checks the wallet is on the right chain first and prompts a switch
 if not - a value-bearing transaction is never broadcast to the wrong
-network. Confirmed legs link to their OKLink receipts. Retrying a partially
+network. Confirmed legs link to their explorer receipts. Retrying a partially
 failed ticket never double-spends: confirmed legs are skipped.
 
 ## 4. Track

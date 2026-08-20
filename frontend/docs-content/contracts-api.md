@@ -11,7 +11,7 @@ external calls beyond paying claims.
 
 | Network | Address |
 |---|---|
-| X Layer Testnet (1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://www.oklink.com/xlayer-test/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
+| X Layer Testnet (1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
 | X Layer Mainnet (196) | launching - the app auto-serves it the moment the address lands in `config.json` |
 
 ### Write functions
@@ -73,7 +73,7 @@ generated" rather than fabricating one on runtime errors.
 
 Three checks anyone can run:
 
-1. **A settlement**: pick a `MarketResolved` event on OKLink and re-derive
+1. **A settlement**: pick a `MarketResolved` event on the explorer and re-derive
    the outcome from the public source the market's title names
 2. **The fleet**: watch `/api/agent-log` and match `stake`/`deployed`/
    `settled` events against venue transactions in the activity ticker
