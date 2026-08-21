@@ -297,10 +297,41 @@ export default function Home() {
                 </div>
               </div>
 
+              {loading && (
+                <p className="markets-loading">
+                  <span className="loading-dot" />
+                  READING THE VENUE ON X LAYER…
+                </p>
+              )}
+
               <div className="markets-grid">
                 {loading
-                  ? Array.from({ length: 4 }, (_, i) => (
-                      <div key={i} className="skeleton-card" />
+                  ? Array.from({ length: 6 }, (_, i) => (
+                      // Structured skeletons rather than empty boxes: on a
+                      // slow RPC the grid otherwise reads as "broken venue"
+                      // instead of "markets on the way".
+                      <div
+                        key={i}
+                        className="skeleton-card"
+                        style={{ animationDelay: `${i * 90}ms` }}
+                        aria-hidden="true"
+                      >
+                        <div className="sk-row">
+                          <span className="sk sk-cat" />
+                          <span className="sk sk-clock" />
+                        </div>
+                        <span className="sk sk-title" />
+                        <span className="sk sk-title sk-title-short" />
+                        <span className="sk sk-bar" />
+                        <div className="sk-row sk-row-odds">
+                          <span className="sk sk-odd" />
+                          <span className="sk sk-odd" />
+                        </div>
+                        <div className="sk-row sk-row-btns">
+                          <span className="sk sk-btn" />
+                          <span className="sk sk-btn" />
+                        </div>
+                      </div>
                     ))
                   : visibleMarkets.map((market, i) => (
                       <MarketCard

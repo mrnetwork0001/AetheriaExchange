@@ -1143,21 +1143,97 @@ button {
 
 /* ── skeletons & motion ── */
 
+/* Loading state for the market grid.
+   The old version was a bare box shimmering between --panel and --panel-2,
+   four hex values apart - invisible on any screen, so a slow RPC made the
+   venue look broken rather than busy. These skeletons carry the market
+   card's actual structure and shimmer with a highlight you can see. */
 .skeleton-card {
-  height: 214px;
+  min-height: 214px;
   border: 1px solid var(--line-soft);
-  background: linear-gradient(
-    100deg,
-    var(--panel) 40%,
-    var(--panel-2) 50%,
-    var(--panel) 60%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite linear;
+  background: var(--panel);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: rise 0.4s ease both;
 }
 
+.sk-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.sk-row-btns {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+/* One shared shimmer so every bar in the card sweeps in step. */
+.sk {
+  display: block;
+  border-radius: 2px;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.04) 40%,
+    rgba(255, 255, 255, 0.11) 50%,
+    rgba(255, 255, 255, 0.04) 60%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+.sk-cat { width: 62px; height: 9px; }
+.sk-clock { width: 88px; height: 9px; opacity: 0.65; }
+.sk-title { width: 100%; height: 15px; }
+.sk-title-short { width: 62%; }
+.sk-bar { width: 100%; height: 4px; margin-top: 2px; }
+.sk-odd { width: 74px; height: 10px; }
+.sk-btn { flex: 1; height: 34px; }
+
 @keyframes shimmer {
-  to { background-position: -200% 0; }
+  to { background-position: -220% 0; }
+}
+
+/* Status line above the grid, so the wait is explained rather than guessed
+   at. The dot is the brand's signature mark doing the pulsing. */
+.markets-loading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+}
+
+.loading-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(126, 231, 5, 0.7);
+  animation: dot-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.72); }
+}
+
+/* Respect a reduced-motion preference: keep the loading state legible
+   without animating it. */
+@media (prefers-reduced-motion: reduce) {
+  .sk,
+  .loading-dot,
+  .skeleton-card {
+    animation: none;
+  }
+  .sk { background: rgba(255, 255, 255, 0.07); }
 }
 
 .market-card {

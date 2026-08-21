@@ -12,10 +12,13 @@ const PRODUCT = [
   { text: "Architecture", href: "#architecture" },
 ];
 
+// No faucet link: the venue is on mainnet and trades real OKB, so pointing
+// visitors at a testnet faucet only misleads them about what they are about
+// to stake.
 const ECOSYSTEM = [
   { text: "OKX Web3 Wallet", href: "https://web3.okx.com" },
   { text: "OKX DEX", href: "https://web3.okx.com/dex-swap" },
-  { text: "X Layer Faucet", href: "https://web3.okx.com/xlayer/faucet" },
+  { text: "X Layer Docs", href: "https://web3.okx.com/xlayer/docs" },
 ];
 
 function XIcon() {
@@ -50,7 +53,6 @@ export function StatFooter() {
     { text: "GitHub", href: REPO },
     { text: "Docs", href: "/docs" },
     { text: "Settlement Receipts", href: "/receipts" },
-    { text: "X Layer Docs", href: "https://web3.okx.com/xlayer/docs" },
     venue
       ? {
           text: "Venue Contract",
