@@ -45,6 +45,29 @@ async function tg(method, payload) {
   return json.result;
 }
 
+// Per-chat conversation state. Without this every message is standalone, so
+// a reply of "YES" to the bot's own question arrives with no idea what it is
+// answering - which is exactly how a two-message trade used to dead-end.
+// Bounded so a busy bot cannot grow this without limit.
+const MAX_SESSIONS = 500;
+const MAX_TURNS = 8;
+const sessions = new Map();
+
+function session(chatId) {
+  let s = sessions.get(chatId);
+  if (!s) {
+    if (sessions.size >= MAX_SESSIONS) sessions.delete(sessions.keys().next().value);
+    s = { history: [], lastMarketId: null };
+    sessions.set(chatId, s);
+  }
+  return s;
+}
+
+function remember(s, role, text) {
+  s.history.push({ role, text: String(text).slice(0, 500) });
+  if (s.history.length > MAX_TURNS) s.history.splice(0, s.history.length - MAX_TURNS);
+}
+
 async function fetchMarkets() {
   const res = await fetch(`${API_URL}/api/markets`);
   if (!res.ok) throw new Error(`markets API ${res.status}`);
@@ -149,10 +172,19 @@ async function handleMessage(chatId, text) {
     /* market context is best-effort */
   }
 
+  const s = session(chatId);
+
   const res = await fetch(`${API_URL}/api/ai/intent`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: text, userWallet: null, currentMarketContext: context }),
+    body: JSON.stringify({
+      prompt: text,
+      userWallet: null,
+      currentMarketContext: context,
+      // Lets a follow-up like "YES" or "make it 2 OKB" resolve against what
+      // was already agreed, the same way the in-app co-pilot works.
+      history: s.history,
+    }),
   });
   if (!res.ok) throw new Error(`intent API ${res.status}`);
   const intent = await res.json();
@@ -163,6 +195,7 @@ async function handleMessage(chatId, text) {
     const t = intent.outcomeTrade;
     lines.push("", `TICKET: ${t.amount} OKB ${t.isYes ? "YES" : "NO"} on market #${t.marketId}`);
     buttons.push([{ text: `Execute on Aetheria ↗`, url: `${API_URL}/?market=${t.marketId}` }]);
+    s.lastMarketId = t.marketId;
   }
   if (intent.dexTrade) {
     const d = intent.dexTrade;
@@ -172,9 +205,28 @@ async function handleMessage(chatId, text) {
     lines.push("", `MARKET DRAFT: ${intent.marketDraft.title}`);
     buttons.push([{ text: "Deploy on Aetheria ↗", url: API_URL }]);
   }
+
+  // Even when the reply is a question rather than a ticket, it usually names
+  // a market - send the reader to that one instead of the front page, where
+  // they would have to find it again by hand.
   if (buttons.length === 0) {
-    buttons.push([{ text: "Open Aetheria ↗", url: API_URL }]);
+    const named = `${text}\n${intent.explanation ?? ""}`.match(/\bmarket\s*#?(\d{1,4})\b/i);
+    const id = named
+      ? Number(named[1])
+      : s.lastMarketId !== null
+        ? s.lastMarketId
+        : null;
+    const known = id !== null && context.some((m) => m.id === id);
+    buttons.push(
+      known
+        ? [{ text: `Open market #${id} ↗`, url: `${API_URL}/?market=${id}` }]
+        : [{ text: "Open Aetheria ↗", url: API_URL }]
+    );
+    if (known) s.lastMarketId = id;
   }
+
+  remember(s, "user", text);
+  remember(s, "copilot", intent.explanation ?? "");
 
   await tg("sendMessage", {
     chat_id: chatId,
