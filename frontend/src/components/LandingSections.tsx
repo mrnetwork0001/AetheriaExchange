@@ -151,8 +151,45 @@ export function LandingSections() {
             {/* x layer bar */}
             <rect x="250" y="300" width="300" height="36" className="arch-box arch-box-gold" />
             <text x="400" y="322" className="arch-text arch-text-gold">
-              X LAYER EVM · 196 / 1952
+              X LAYER EVM
             </text>
+
+            {/* Signal packets. Every intent enters at the wallet, splits at
+                the engine into an outcome leg and a hedge leg, and both come
+                to rest on X Layer - so the diagram animates the claim the
+                page is making rather than just decorating it. Negative begin
+                offsets stagger the phases without leaving a gap on the
+                first pass. */}
+            <g className="arch-packets">
+              {[
+                { d: "M400,48 L400,106", cls: "", begin: "0s" },
+                { d: "M400,48 L400,106", cls: "", begin: "-1.1s" },
+                { d: "M388,130 L210,216", cls: "pkt-green", begin: "-0.35s" },
+                { d: "M388,130 L210,216", cls: "pkt-green", begin: "-1.45s" },
+                { d: "M412,130 L590,216", cls: "pkt-violet", begin: "-0.7s" },
+                { d: "M412,130 L590,216", cls: "pkt-violet", begin: "-1.8s" },
+                { d: "M210,264 L330,306", cls: "pkt-gold", begin: "-0.9s" },
+                { d: "M590,264 L470,306", cls: "pkt-gold", begin: "-1.6s" },
+              ].map((p, i) => (
+                <circle key={i} r="2.6" className={`arch-packet ${p.cls}`}>
+                  <animateMotion
+                    dur="2.2s"
+                    begin={p.begin}
+                    repeatCount="indefinite"
+                    path={p.d}
+                    calcMode="linear"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0;1;1;0"
+                    keyTimes="0;0.15;0.8;1"
+                    dur="2.2s"
+                    begin={p.begin}
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              ))}
+            </g>
           </svg>
         </div>
       </section>

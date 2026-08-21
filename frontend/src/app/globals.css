@@ -1497,14 +1497,76 @@ button {
   stroke: rgba(165, 150, 107, 0.5);
 }
 
+/* The engine is the only thing on the diagram that thinks, so it is the
+   only thing that breathes. */
 .arch-diamond {
   fill: var(--violet);
   filter: drop-shadow(0 0 12px rgba(160, 107, 255, 0.8));
+  transform-origin: 400px 124px;
+  animation: arch-think 2.2s ease-in-out infinite;
 }
 
+/* The 45deg is carried here, not left to the SVG transform attribute: a CSS
+   transform REPLACES that attribute outright, so omitting it turns the
+   diamond back into a square. */
+@keyframes arch-think {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(160, 107, 255, 0.65));
+    transform: rotate(45deg) scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(160, 107, 255, 1));
+    transform: rotate(45deg) scale(1.13);
+  }
+}
+
+/* Dashes crawl along every connector in the direction the value moves, so
+   the whole diagram reads as a system under load rather than a still. */
 .arch-line {
   stroke: var(--line);
   stroke-width: 1;
+  stroke-dasharray: 3 7;
+  animation: arch-flow 1.6s linear infinite;
+}
+
+@keyframes arch-flow {
+  to { stroke-dashoffset: -20; }
+}
+
+/* Packets: small bright marks riding the connectors. */
+.arch-packet {
+  fill: var(--text);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+}
+
+.arch-packet.pkt-green {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 7px rgba(126, 231, 5, 0.95));
+}
+
+.arch-packet.pkt-violet {
+  fill: var(--violet);
+  filter: drop-shadow(0 0 7px rgba(160, 107, 255, 0.95));
+}
+
+.arch-packet.pkt-gold {
+  fill: var(--label);
+  filter: drop-shadow(0 0 6px rgba(165, 150, 107, 0.9));
+}
+
+/* Motion is the point here, but never at the cost of accessibility: hold
+   the diagram still for anyone who asks for that. */
+@media (prefers-reduced-motion: reduce) {
+  .arch-line {
+    stroke-dasharray: none;
+    animation: none;
+  }
+  .arch-diamond {
+    animation: none;
+  }
+  .arch-packets {
+    display: none;
+  }
 }
 
 .arch-line-green {
