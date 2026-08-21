@@ -22,8 +22,7 @@ user's own wallet.
 | **Agent console** | [aetheria.exchange/?tab=agents](https://www.aetheria.exchange/?tab=agents) - live decisions from the fleet |
 | Documentation | [aetheria.exchange/docs](https://www.aetheria.exchange/docs) |
 | Source | [github.com/mrnetwork0001/AetheriaExchange](https://github.com/mrnetwork0001/AetheriaExchange) |
-| Legacy testnet venue (chain 1952) | [`0xA82EDb5e…EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - same address, kept for reference |
-| First autonomous settlement | [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) *(testnet)* - the resolver read the Nasdaq close and settled onchain, no human in the loop |
+| Testnet venue (chain 1952) | [`0xA82EDb5e…EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - same address, still live |
 | X | [@AetheriaEx](https://x.com/AetheriaEx) |
 
 Built for the **X Layer AI Season Hackathon** - see [SUBMISSION.md](SUBMISSION.md).
@@ -32,10 +31,50 @@ Built for the **X Layer AI Season Hackathon** - see [SUBMISSION.md](SUBMISSION.m
 > markets and spot trades carry risk of total loss. Nothing here is financial
 > advice.
 
+## Deployment timeline
+
+Aetheria was built on testnet, proven there, and then launched to mainnet -
+in that order, with each step evidenced onchain.
+
+| Date (UTC) | Milestone |
+|---|---|
+| **2026-08-12** | Venue deployed to **X Layer Testnet** (chain 1952), block 38107772 |
+| **2026-08-15** | **First fully autonomous settlement.** The resolver read the Nasdaq close for TSLA, compared it to the market's threshold, and settled onchain with no human involved - [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) |
+| **2026-08-17** | Public testnet launch announced on [@AetheriaEx](https://x.com/AetheriaEx); the agent fleet begins running 24/7 |
+| **2026-08-20** | Venue deployed to **X Layer Mainnet** (chain 196), block 68469454 |
+| **2026-08-21** | **First autonomous mainnet settlements.** Overnight the resolver settled three markets and declined a fourth - see [Autonomous settlement, proven](#autonomous-settlement-proven) |
+| **2026-08-21** | Public mainnet launch announced on [@AetheriaEx](https://x.com/AetheriaEx) |
+
+Eight days of testnet operation sit behind the mainnet launch: the same
+contract, the same agents, and a settlement record that existed before any
+real funds were at stake.
+
+## Autonomous settlement, proven
+
+On the night of **2026-08-20**, with no human involved, the venue settled
+three of its own mainnet markets - and refused to settle a fourth.
+
+| Market | Outcome | Reading vs threshold | Winners paid | Transaction |
+|---|---|---|---|---|
+| OKB 24h trading volume above $100M | **NO** | $44.3M vs $100M | 1.33x | [`0x77665e2e…`](https://web3.okx.com/explorer/x-layer/evm/tx/0x77665e2e24158e53141baeb5825e80e8f0c39a5b82aa9247938931d2c64425b4) |
+| X Layer total DeFi TVL above $100M | **YES** | $112.6M vs $100M | 1.25x | [`0x94cd841b…`](https://web3.okx.com/explorer/x-layer/evm/tx/0x94cd841b769c8956c6072f4fd7e4a88ed385aa3beaa010fb68a639ab77500f7d) |
+| X Layer stablecoin supply above $150M | **YES** | $2.07B vs $150M | 1.25x | [`0xa4f46d6c…`](https://web3.okx.com/explorer/x-layer/evm/tx/0xa4f46d6cf476ce02de9ceb3a0d808802c5513e5661f883696618da6dca6ff22d) |
+| Tokenized RWA TVL above $27.5B | **refused** | $27.50B vs $27.5B | - | still open, queued for human review |
+
+The refusal is the one worth dwelling on. The reading landed **exactly on the
+threshold**. Inside a 1% dispute band the resolver declines to settle rather
+than call a coin flip, and says so in its public log. Every venue claims it
+settles fairly; this one can point at the market it would not guess on.
+
+Every row is verifiable from
+[aetheria.exchange/receipts](https://www.aetheria.exchange/receipts).
+
 ---
 
 ## Contents
 
+- [Deployment timeline](#deployment-timeline)
+- [Autonomous settlement, proven](#autonomous-settlement-proven)
 - [What makes this different](#what-makes-this-different)
 - [How it works](#how-it-works)
 - [The agents](#the-agents)

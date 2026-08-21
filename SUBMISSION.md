@@ -19,6 +19,24 @@ hedge, fully self-custodied.
 
 ---
 
+## Deployment timeline
+
+Built on testnet, proven there, then launched to mainnet - in that order,
+with every step evidenced onchain.
+
+| Date (UTC) | Milestone |
+|---|---|
+| **2026-08-12** | Venue deployed to **X Layer Testnet** (chain 1952), block 38107772 |
+| **2026-08-15** | **First fully autonomous settlement.** The resolver read the Nasdaq close, compared it to the market's threshold, and settled onchain with no human involved - [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) |
+| **2026-08-17** | Public testnet launch announced on [@AetheriaEx](https://x.com/AetheriaEx); the agent fleet begins running 24/7 |
+| **2026-08-20** | Venue deployed to **X Layer Mainnet** (chain 196), block 68469454 |
+| **2026-08-21** | **First autonomous mainnet settlements** - three settled, one refused (below) |
+| **2026-08-21** | Public mainnet launch announced on [@AetheriaEx](https://x.com/AetheriaEx) |
+
+Eight days of testnet operation sit behind the mainnet launch: the same
+contract, the same agents, and a settlement record that existed before any
+real funds were at stake.
+
 ## The single strongest claim, first
 
 **On the night of 2026-08-20, with no human involved, the venue settled three
@@ -219,9 +237,9 @@ Full detail: [README.md](README.md#roadmap).
 ## Requirements checklist
 
 - [x] AI incorporated into product design (intent engine, market drafting, AI-priced market making, autonomous settlement)
-- [x] **Launched on X Layer Mainnet (chain 196)** - `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`, deploy block 68469454, live with autonomous settlements
-- [x] Previously deployed and proven on X Layer Testnet (chain 1952)
-- [x] Dedicated X account (@AetheriaEx), active
+- [x] **Deployed on X Layer Testnet (chain 1952) during the hackathon** - 2026-08-12, block 38107772; eight days of live operation including the first autonomous settlement on 2026-08-15
+- [x] **Subsequently launched on X Layer Mainnet (chain 196)** - 2026-08-20, block 68469454, `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`, now settling autonomously
+- [x] Dedicated X account ([@AetheriaEx](https://x.com/AetheriaEx)), active since the testnet launch on 2026-08-17
 - [ ] Submission post mentioning @XLayerOfficial
 - [ ] Google Form submitted by Aug 21, 23:59 UTC
 
