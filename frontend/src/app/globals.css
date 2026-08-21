@@ -162,6 +162,24 @@ button {
   gap: 14px;
 }
 
+/* Quiet next to the network badge and the wallet button - it is a way in,
+   not a call to action, so it reads as a label until hovered. */
+.header-link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+  text-decoration: none;
+  padding: 8px 2px;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.header-link:hover {
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(126, 231, 5, 0.45);
+}
+
 .chain-badge {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -265,10 +283,18 @@ button {
 }
 
 .menu-dropdown .chain-badge,
-.menu-dropdown .connect-btn {
+.menu-dropdown .connect-btn,
+.menu-dropdown .header-link {
   width: 100%;
   justify-content: center;
   text-align: center;
+}
+
+/* In the dropdown the link sits alongside bordered controls, so give it a
+   matching box rather than letting it float as bare text. */
+.menu-dropdown .header-link {
+  border: 1px solid var(--line);
+  padding: 8px 14px;
 }
 
 @media (max-width: 640px) {

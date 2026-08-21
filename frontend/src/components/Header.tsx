@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   useAccount,
   useConnect,
@@ -43,6 +44,17 @@ export function Header() {
 
   const controls = (
     <>
+      {/* Sits inside `controls` so it appears in the mobile dropdown too -
+          the docs are the answer to most first-time questions, and they were
+          previously reachable only from the footer. */}
+      <Link
+        href="/docs"
+        className="header-link"
+        onClick={() => setMenuOpen(false)}
+      >
+        DOCS
+      </Link>
+
       {mismatch && venueChainId ? (
         <button
           className="chain-badge wrong"
