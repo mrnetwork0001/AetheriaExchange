@@ -13,6 +13,7 @@ hedge, fully self-custodied.
 | **Settlement receipts** | [aetheria.exchange/receipts](https://www.aetheria.exchange/receipts) - every settlement with its onchain transaction |
 | Agent console | [aetheria.exchange/?tab=agents](https://www.aetheria.exchange/?tab=agents) |
 | Documentation | [aetheria.exchange/docs](https://www.aetheria.exchange/docs) |
+| Telegram bot | [@AetheriaExBot](https://t.me/AetheriaExBot) - the co-pilot in chat |
 | GitHub | https://github.com/mrnetwork0001/AetheriaExchange |
 | X account | https://x.com/AetheriaEx |
 | Legacy testnet venue (chain 1952) | [`0xA82EDb5e…EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - same address, kept for reference |
@@ -232,8 +233,8 @@ X Layer mainnet (196) ◄──────────────────�
   funding a mode where losers recover principal and the yield is the prize.
 - **Scalar markets**: bucketed "predict the number" ranges as a
   multi-outcome evolution of the contract.
-- **Distribution**: public Telegram bot launch, OKX Wallet dApp listing, and
-  registration in OKX's onchain AI-agent economy.
+- **Distribution**: OKX Wallet dApp listing, and registration in OKX's
+  onchain AI-agent economy.
 
 Full detail: [README.md](README.md#roadmap).
 

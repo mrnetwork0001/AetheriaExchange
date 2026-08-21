@@ -505,7 +505,8 @@ economically motivated flow - the only kind the rules count.
   from chain logs without an external indexer
 - **AGENT OPS console** - every agent decision, live and public
 - Ten-page documentation portal, statically rendered
-- Telegram bot bridging the co-pilot to chat (built; public launch pending)
+- Telegram bot live at [@AetheriaExBot](https://t.me/AetheriaExBot) - the
+  co-pilot in chat, replying with tickets and deep links to execute
 
 ### Next
 
