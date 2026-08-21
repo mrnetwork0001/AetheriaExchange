@@ -216,21 +216,24 @@ X Layer mainnet (196) ◄──────────────────�
 
 ## Roadmap (post-hackathon)
 
+**Next**
 - **Verified contract source** on the block explorer.
-- **Mass-market onboarding**: social-login embedded wallets with sponsored
-  gas - Polymarket-style sign-in without breaking self-custody - plus
-  WalletConnect for mobile.
-- **Yield-bearing pools ("no-loss markets")**: park idle parimutuel float in
-  a fixed-yield position so a market's liquidity earns while it waits.
-- **Scalar PULSE pools**: bucketed "predict the number" range markets.
+- **Live-metric anchoring for the drafter**, so thresholds are chosen against
+  current readings rather than priors - the odds engine already works this
+  way, and extending it removes the last place the system guesses.
 - **Decentralized resolution**: oracle-fed adapters replacing owner-key
   settlement.
-- **Live-metric anchoring for the drafter**, so thresholds are chosen against
-  current readings rather than priors.
-- **Distribution**: public Telegram bot, OKX Wallet dApp listing, OKX
-  agent-economy registration.
-- **Decentralized AI stack**: cross-device 0G Storage memory with
-  wallet-derived keys; agent reasoning receipts published to 0G Storage.
+- **Cross-device chat memory**: pointer portability for the 0G Storage sync
+  with wallet-signature-derived keys.
+
+**Exploring**
+- **Yield-bearing pools ("no-loss markets")**: park idle parimutuel float in
+  a fixed-yield position so a market's liquidity earns while it waits,
+  funding a mode where losers recover principal and the yield is the prize.
+- **Scalar markets**: bucketed "predict the number" ranges as a
+  multi-outcome evolution of the contract.
+- **Distribution**: public Telegram bot launch, OKX Wallet dApp listing, and
+  registration in OKX's onchain AI-agent economy.
 
 Full detail: [README.md](README.md#roadmap).
 

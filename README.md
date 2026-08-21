@@ -466,34 +466,64 @@ economically motivated flow - the only kind the rules count.
 
 ## Roadmap
 
-**Shipped**
-- Mainnet launch on X Layer (chain 196), hosted at aetheria.exchange
-- Public settlement receipts with onchain verification
-- Autonomous drafting, market making and settlement running 24/7
-- Live-metric anchoring for AI fair odds
+### Shipped
 
-**Next**
+**The venue**
+- `OutcomeMarket.sol` - parimutuel YES/NO markets in native OKB, 11/11 tests,
+  with a permissionless `forceCancelStale` escape hatch so funds cannot be
+  stranded by an absent owner
+- Deployed to X Layer Testnet (2026-08-12), then Mainnet (2026-08-20)
+- Six market categories supported - PULSE, RWA, EQUITY, SPORTS, CRYPTO,
+  MACRO - with markets live across five of them today
+
+**The autonomous fleet**
+- **Pulse Drafter** - writes the day's machine-resolvable markets and deploys
+  them onchain, daily on cron
+- **Market Maker** - seeds both sides at AI-estimated fair odds under a
+  per-run budget cap, tops up thin sides, and sweeps its own settled
+  positions to reclaim capital
+- **Resolver** - settles from public data behind a settlement gauntlet
+  (creator allowlist, single-adapter match, threshold parsing, staleness
+  bounds, dispute band) and queues anything ambiguous for a human
+- One-command VPS install: systemd service, flock-guarded cron, log rotation
+
+**The AI layer**
+- Co-pilot turning plain English into signed tickets, with voice input and
+  wallet-keyed chat memory
+- Live-metric anchoring for fair odds, sharing the resolver's exact data
+  adapters so pricing and settlement never disagree
+- Provider abstraction: Anthropic structured outputs or **0G Compute**
+  decentralized inference
+- Chat memory AES-GCM encrypted client-side and synced to **0G Storage**
+
+**Execution and proof**
+- OKX DEX hedging: prefilled interface deep link plus in-app aggregator
+  routing with automatic ERC-20 allowance handling
+- Hedge direction enforced server-side, so a "hedge" can never be a
+  correlated double-down
+- **Settlement receipts** (`/receipts`) - full onchain audit trail, rebuilt
+  from chain logs without an external indexer
+- **AGENT OPS console** - every agent decision, live and public
+- Ten-page documentation portal, statically rendered
+- Telegram bot bridging the co-pilot to chat (built; public launch pending)
+
+### Next
+
 - Verified contract source on the block explorer
-- Cross-device memory: pointer portability for the 0G Storage sync (on-chain
-  or 0G-KV pointer registry) with wallet-signature-derived encryption keys
-- Social-login **embedded wallets** with **sponsored gas** via a
-  relayer/paymaster - Polymarket-style onboarding without breaking
-  self-custody; WalletConnect for mobile wallets
-- **Yield-bearing pools ("no-loss markets")**: park idle parimutuel float in
-  a fixed-yield position - Pendle went live on X Layer on 2026-08-11 - so a
-  market's liquidity earns while it waits for resolution, funding a mode
-  where losers recover principal and the yield forms the prize. Needs a vault
-  extension to `OutcomeMarket` plus a matured-PT settlement path.
-- **More tokenized-equity coverage** as instruments list on X Layer, and
-  scalar equity markets (close-price ranges) rather than binary thresholds
-- **Scalar PULSE pools**: bucketed range markets as a multi-outcome
-  parimutuel evolution of the current contract
+- Live-metric anchoring for the **drafter**, so thresholds are chosen against
+  current readings rather than priors (the odds engine already does this)
 - Decentralized resolution: migrate the resolver's adapters to oracle feeds
-  and open resolution beyond the owner key
-- Live-metric anchoring for the drafter, so thresholds are chosen against
-  current readings rather than priors
-- Indexer-backed full activity history and leaderboards
-- Telegram bot public launch; OKX Wallet dApp discovery listing; registration
-  in OKX's onchain AI-agent economy
-- Agent decisioning fully on 0G Compute, with reasoning receipts published to
-  0G Storage for auditability
+  and open settlement beyond the owner key
+- Cross-device chat memory: pointer portability for the 0G Storage sync with
+  wallet-signature-derived keys
+
+### Exploring
+
+- **Yield-bearing pools ("no-loss markets")** - park idle parimutuel float in
+  a fixed-yield position so a market's liquidity earns while it waits,
+  funding a mode where losers recover principal and the yield is the prize
+- **Scalar markets** - bucketed "predict the number" ranges as a
+  multi-outcome evolution of the contract
+- Social-login embedded wallets with sponsored gas, and WalletConnect
+- Indexer-backed activity history and leaderboards
+- Registration in OKX's onchain AI-agent economy
