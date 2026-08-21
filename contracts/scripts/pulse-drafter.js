@@ -16,6 +16,7 @@ const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 const { opsReporter } = require("./lib/ops");
+const { readingFor, thresholdIsSane, usd } = require("./lib/readings");
 
 const ops = opsReporter("pulse-drafter");
 
@@ -85,12 +86,35 @@ function log(msg) {
   console.log(`[DRAFTER ${new Date().toISOString()}] ${msg}`);
 }
 
+// Pulls the number out of a drafted title so it can be sanity-checked
+// against the live reading. Mirrors the magnitudes the resolver parses.
+const MAGNITUDES = { k: 1e3, m: 1e6, mm: 1e6, mn: 1e6, million: 1e6, b: 1e9, bn: 1e9, bln: 1e9, billion: 1e9, t: 1e12, tn: 1e12, trillion: 1e12 };
+
+function thresholdInTitle(title) {
+  const m = String(title).match(
+    /\$\s*([\d,]+(?:\.\d+)?)\s*(k|mm|mn|m|bln|bn|b|tn|t|million|billion|trillion)?\b/i
+  );
+  if (!m) return NaN;
+  const n = Number(m[1].replace(/,/g, ""));
+  if (!Number.isFinite(n)) return NaN;
+  const suffix = (m[2] ?? "").toLowerCase();
+  return suffix ? n * (MAGNITUDES[suffix] ?? NaN) : n;
+}
+
 async function draftFromApi(topic, marketContext) {
+  // Give the model the current value so it can size a threshold the market
+  // could plausibly land either side of. Best-effort: no reading just means
+  // the model drafts as it did before.
+  const reading = await readingFor(topic);
+  const guidance = reading
+    ? ` ${reading.text} Choose a threshold close to this value - within about 10% either side - so the outcome is genuinely uncertain at the time of writing. Never pick a threshold the reading has already cleared by a wide margin.`
+    : "";
+
   const res = await fetch(`${API_URL}/api/ai/intent`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      prompt: `Create ${topic}`,
+      prompt: `Create ${topic}.${guidance}`,
       userWallet: null,
       currentMarketContext: marketContext,
     }),
@@ -100,6 +124,18 @@ async function draftFromApi(topic, marketContext) {
   if (!intent?.marketDraft?.title) {
     log(`no draft for "${topic}" (engine: ${intent?.engine ?? "?"}) - skipping`);
     return null;
+  }
+
+  // Guard, not just guidance: the prompt can be ignored, and a market whose
+  // outcome is decided before it opens is worse than no market at all.
+  const verdict = thresholdIsSane(thresholdInTitle(intent.marketDraft.title), reading);
+  if (!verdict.ok) {
+    log(`rejected draft "${intent.marketDraft.title}" - ${verdict.why}`);
+    ops("rejected draft", `${verdict.why}`.slice(0, 180));
+    return null;
+  }
+  if (reading) {
+    log(`  anchored on ${reading.label}: ${usd(reading.value)}`);
   }
   return { draft: intent.marketDraft, engine: intent.engine };
 }
