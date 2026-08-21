@@ -1,6 +1,7 @@
 # The Four Agents
 
-Four autonomous AI components cover the whole market lifecycle. The claim is
+Four AI components cover the whole market lifecycle - **three of them
+autonomous**, plus a co-pilot that serves users on request. The claim is
 specific: **the AI trades, creates, makes, and settles the markets** - one
 agent per verb.
 

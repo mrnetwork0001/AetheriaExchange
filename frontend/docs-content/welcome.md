@@ -5,10 +5,11 @@ YES/NO on real-world events on a parimutuel venue settled in native OKB, and
 an AI co-pilot turns plain English into executable tickets - an outcome bet
 plus a correlated OKX DEX hedge, signed entirely in the user's own wallet.
 
-The AI is not a chat feature bolted onto an exchange. Four autonomous agents
-run the venue end to end: **the AI trades, creates, makes, and settles the
-markets.** Every decision they take is posted to a public console, and every
-settlement is an onchain transaction anyone can verify.
+The AI is not a chat feature bolted onto an exchange. Three autonomous agents
+run the venue end to end, and a co-pilot serves users on request: **the AI
+trades, creates, makes, and settles the markets.** Every decision they take
+is posted to a public console, and every settlement is an onchain
+transaction anyone can verify.
 
 - **Bitcoin** - trustless money
 - **Ethereum** - trustless computation
@@ -21,9 +22,10 @@ settlement is an onchain transaction anyone can verify.
 | Live app | [aetheria.exchange](https://www.aetheria.exchange) |
 | Agent console | [aetheria.exchange/?tab=agents](https://www.aetheria.exchange/?tab=agents) |
 | Settlement receipts | [aetheria.exchange/receipts](https://www.aetheria.exchange/receipts) |
-| Testnet venue (chain 1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
-| First autonomous settlement | [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) |
-| GitHub | [AetheriaEx/AetheriaExchange](https://github.com/AetheriaEx/AetheriaExchange) |
+| **Mainnet venue (chain 196)** | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer/evm/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - deploy block 68469454 |
+| First autonomous mainnet settlement | [`0x94cd841b…`](https://web3.okx.com/explorer/x-layer/evm/tx/0x94cd841b769c8956c6072f4fd7e4a88ed385aa3beaa010fb68a639ab77500f7d) - X Layer DeFi TVL above $100M, resolved YES |
+| Legacy testnet venue (chain 1952) | [`0xA82EDb5e…EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - same address |
+| GitHub | [mrnetwork0001/AetheriaExchange](https://github.com/mrnetwork0001/AetheriaExchange) |
 | X | [@AetheriaEx](https://x.com/AetheriaEx) |
 
 ## The stack, in one paragraph

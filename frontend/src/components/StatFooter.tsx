@@ -3,7 +3,7 @@
 import { useVenueChain } from "@/hooks/useVenueChain";
 import { explorerAddressUrl, explorerBaseUrl } from "@/lib/chains";
 
-const REPO = "https://github.com/AetheriaEx/AetheriaExchange";
+const REPO = "https://github.com/mrnetwork0001/AetheriaExchange";
 
 const PRODUCT = [
   { text: "Outcome Markets", href: "#markets" },
@@ -87,7 +87,7 @@ export function StatFooter() {
               <XIcon />
             </a>
             <a
-              href="https://github.com/AetheriaEx"
+              href="https://github.com/mrnetwork0001"
               target="_blank"
               rel="noreferrer"
               aria-label="Aetheria on GitHub"

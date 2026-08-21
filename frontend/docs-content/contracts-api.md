@@ -11,8 +11,8 @@ external calls beyond paying claims.
 
 | Network | Address |
 |---|---|
-| X Layer Testnet (1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) |
-| X Layer Mainnet (196) | launching - the app auto-serves it the moment the address lands in `config.json` |
+| **X Layer Mainnet (196)** | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer/evm/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - live, deploy block 68469454 |
+| X Layer Testnet (1952) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://web3.okx.com/explorer/x-layer-testnet/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) - legacy, same address |
 
 ### Write functions
 

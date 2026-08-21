@@ -59,7 +59,7 @@ export default function DocsPage({ params }: { params: { slug?: string[] } }) {
           <Link href="/?tab=agents">AGENT OPS</Link>
           <Link href="/receipts">RECEIPTS</Link>
           <a
-            href="https://github.com/AetheriaEx/AetheriaExchange"
+            href="https://github.com/mrnetwork0001/AetheriaExchange"
             target="_blank"
             rel="noreferrer"
           >
