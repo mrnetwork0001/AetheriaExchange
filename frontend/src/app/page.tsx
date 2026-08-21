@@ -118,8 +118,17 @@ export default function Home() {
     if (deepLinkHandled.current || markets.length === 0) return;
     deepLinkHandled.current = true;
     const id = new URLSearchParams(window.location.search).get("market");
-    if (id === null || !/^\d+$/.test(id)) return;
-    if (markets.some((m) => m.id === Number(id))) setDetailId(Number(id));
+    if (id === null) return;
+    if (/^\d+$/.test(id) && markets.some((m) => m.id === Number(id))) {
+      setDetailId(Number(id));
+      return;
+    }
+    // An id that does not resolve here (malformed, or from another chain's
+    // venue) would otherwise sit in the address bar looking valid and get
+    // re-shared. Drop it so what the user can copy always works.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("market");
+    window.history.replaceState({}, "", url);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markets.length]);
 
