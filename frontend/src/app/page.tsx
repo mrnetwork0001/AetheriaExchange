@@ -110,15 +110,42 @@ export default function Home() {
     if (t === "agents" || t === "positions") setTab(t);
   }, []);
 
-  // Deep link: ?market=<id> opens the detail view exactly once.
+  // Deep link: ?market=<id> opens the detail view exactly once. The flag is
+  // set as soon as markets land, whether or not a link was present, because
+  // the URL-sync effect below waits on it - without that, sync would strip
+  // an incoming ?market= before this ever read it.
   useEffect(() => {
     if (deepLinkHandled.current || markets.length === 0) return;
+    deepLinkHandled.current = true;
     const id = new URLSearchParams(window.location.search).get("market");
     if (id === null || !/^\d+$/.test(id)) return;
-    deepLinkHandled.current = true;
     if (markets.some((m) => m.id === Number(id))) setDetailId(Number(id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markets.length]);
+
+  // Keep the address bar in step with the open market, so the URL is always
+  // shareable and Back closes the market rather than leaving the venue.
+  useEffect(() => {
+    const onPop = () => {
+      const id = new URLSearchParams(window.location.search).get("market");
+      setDetailId(id !== null && /^\d+$/.test(id) ? Number(id) : null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  useEffect(() => {
+    // Wait for the incoming deep link to be consumed first.
+    if (!deepLinkHandled.current) return;
+    const current = new URLSearchParams(window.location.search).get("market");
+    const wanted = detailId === null ? null : String(detailId);
+    if (current === wanted) return;
+    const url = new URL(window.location.href);
+    if (wanted === null) url.searchParams.delete("market");
+    else url.searchParams.set("market", wanted);
+    // pushState (not replace) so Back is the natural way out of a market.
+    window.history.pushState({ market: detailId }, "", url);
+  }, [detailId]);
 
   const categories = useMemo(
     () => ["ALL", ...Array.from(new Set(markets.map((m) => m.category)))],
