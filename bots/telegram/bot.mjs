@@ -51,10 +51,20 @@ async function fetchMarkets() {
   return res.json();
 }
 
+// Market titles come off the chain, so they are escaped before going into
+// an HTML-parsed message - an unescaped "&" or "<" would break the whole
+// listing, not just one line.
+const esc = (s) =>
+  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 function marketLine(m) {
   const status =
     m.status === 1 ? ` - RESOLVED ${m.outcome ? "YES" : "NO"}` : m.status === 2 ? " - CANCELLED" : "";
-  return `#${m.id} [${m.category}] ${m.title}\n    YES ${m.yesPct}% | NO ${100 - m.yesPct}% | pool ${(Number(m.yesPoolOkb) + Number(m.noPoolOkb)).toFixed(2)} OKB${status}`;
+  // The heading links straight to this market on the venue, so a reader can
+  // go from the list to the exact market instead of the front page.
+  const link = `${API_URL}/?market=${m.id}`;
+  const head = `<a href="${link}">#${m.id} [${esc(m.category)}] ${esc(m.title)}</a>`;
+  return `${head}\n    YES ${m.yesPct}% | NO ${100 - m.yesPct}% | pool ${(Number(m.yesPoolOkb) + Number(m.noPoolOkb)).toFixed(2)} OKB${status}`;
 }
 
 const HELP = [
@@ -87,7 +97,9 @@ async function handleMessage(chatId, text) {
     let current = "LIVE MARKETS";
     for (const m of open) {
       const line = `\n\n${marketLine(m)}`;
-      if (current.length + line.length > 3500) {
+      // Lower than the 4096 cap by a wide margin: the anchor tags are part
+      // of the payload Telegram counts, and titles vary in length.
+      if (current.length + line.length > 3000) {
         chunks.push(current);
         current = line.trimStart();
       } else {
@@ -99,6 +111,10 @@ async function handleMessage(chatId, text) {
       await tg("sendMessage", {
         chat_id: chatId,
         text: chunks[i],
+        parse_mode: "HTML",
+        // Every title is a link; without this Telegram would attach a card
+        // for the first one and push the listing down the screen.
+        disable_web_page_preview: true,
         ...(i === chunks.length - 1
           ? {
               reply_markup: {
