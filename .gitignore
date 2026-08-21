@@ -12,3 +12,6 @@ contracts/typechain-types/
 frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
+
+# Bot secrets live outside git in every package.
+bots/telegram/.env

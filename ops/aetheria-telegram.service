@@ -1,0 +1,30 @@
+# Aetheria Telegram bot. Bridges the co-pilot to chat: free text goes
+# through the same intent engine the dApp uses and comes back as a ticket
+# with a deep link to execute. The bot holds no keys and signs nothing.
+#
+# Install (substitute __REPO_DIR__ and __USER__, or use the sed line in the
+# README's Telegram section):
+#   sudo cp ops/aetheria-telegram.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now aetheria-telegram
+#
+#   systemctl status aetheria-telegram     # health
+#   journalctl -u aetheria-telegram -f     # live log
+[Unit]
+Description=Aetheria Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Never run as root - same posture as the other agents.
+User=__USER__
+WorkingDirectory=__REPO_DIR__
+# The bot reads process.env directly (no dotenv), so systemd supplies it.
+# Keep this file 0600 and owned by the run user: it holds the bot token.
+EnvironmentFile=__REPO_DIR__/bots/telegram/.env
+ExecStart=/usr/bin/env node bots/telegram/bot.mjs
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
