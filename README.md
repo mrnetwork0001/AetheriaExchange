@@ -134,6 +134,10 @@ narrower and checkable:
 4. **Track.** Positions with live payout estimates and 1-click claims, a
    real-time onchain activity ticker, market detail views with orderflow, and
    wallet-keyed persistent chat memory.
+5. **Share.** Every market has a stable permalink - `?market=<id>` - that the
+   address bar follows as you browse. Market ids are assigned by the contract
+   and never change, so a link keeps working after the market settles, which
+   is what makes a settlement receipt worth posting.
 
 ### Market categories
 
@@ -278,7 +282,8 @@ frontend/             Next.js 14 dApp (App Router)
   src/lib                         chains, payout math, AI provider, tokens,
                                   liveMetrics (odds anchoring), KV, memory
   docs-content/                   markdown source for the docs portal
-ops/                  bootstrap-vps.sh, systemd unit, cron schedule
+ops/                  bootstrap-vps.sh, systemd units (market maker,
+                      Telegram bot), cron schedule
 docs/                 DEPLOY.md, DELIVERY-CHECKLIST.md, brand-kit.md
 bots/telegram/        zero-dependency Telegram bot
 SUBMISSION.md         hackathon submission package
@@ -334,12 +339,28 @@ configured - they never fabricate trades on runtime errors.
 | `RESOLVER_DRY_RUN` | no | evaluate and print, settle nothing |
 | `OKLINK_API_KEY` | no | contract source verification |
 
-### `bots/` (Telegram)
+### `bots/telegram/.env`
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `TELEGRAM_BOT_TOKEN` | yes | from @BotFather |
+| `TELEGRAM_BOT_TOKEN` | yes | from @BotFather. Full control of the bot - keep the file at `chmod 600` |
 | `AETHERIA_API_URL` | yes | deployed frontend base URL |
+
+The bot installs as a systemd service from
+[`ops/aetheria-telegram.service`](ops/aetheria-telegram.service), running as
+an unprivileged user with its token supplied by an environment file rather
+than baked into the unit:
+
+```bash
+sed -e "s|__REPO_DIR__|/path/to/repo|g" -e "s|__USER__|aetheria|g" \
+  ops/aetheria-telegram.service > /etc/systemd/system/aetheria-telegram.service
+systemctl daemon-reload && systemctl enable --now aetheria-telegram
+```
+
+It holds no keys and signs nothing: free text goes through the same intent
+engine the dApp uses, and the reply carries the ticket plus a deep link into
+the dApp, where the user signs in their own wallet. Conversation state is
+per-chat and in-process, so a restart clears it.
 
 `.env` files are gitignored; `.env.example` templates ship in each package.
 
@@ -505,8 +526,11 @@ economically motivated flow - the only kind the rules count.
   from chain logs without an external indexer
 - **AGENT OPS console** - every agent decision, live and public
 - Ten-page documentation portal, statically rendered
+- Stable market permalinks (`?market=<id>`), so a market - settled or live -
+  can be linked to directly from anywhere
 - Telegram bot live at [@AetheriaExBot](https://t.me/AetheriaExBot) - the
-  co-pilot in chat, replying with tickets and deep links to execute
+  co-pilot in chat, with conversation memory across turns, per-market links
+  in `/markets`, and tickets that hand off to the dApp to sign
 
 ### Next
 
