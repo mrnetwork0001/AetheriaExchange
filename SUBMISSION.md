@@ -28,10 +28,10 @@ with every step evidenced onchain.
 |---|---|
 | **2026-08-12** | Venue deployed to **X Layer Testnet** (chain 1952), block 38107772 |
 | **2026-08-15** | **First fully autonomous settlement.** The resolver read the Nasdaq close, compared it to the market's threshold, and settled onchain with no human involved - [`0x7663a2bf…5333cf`](https://web3.okx.com/explorer/x-layer-testnet/tx/0x7663a2bfe58af16e1a998c5de369e62b4f244fcdf9d07a10ba00657c0d5333cf) |
-| **2026-08-17** | Public testnet launch announced on [@AetheriaEx](https://x.com/AetheriaEx); the agent fleet begins running 24/7 |
+| **2026-08-17** | [**Public testnet launch announced**](https://x.com/aetheriaex/status/2089417872321765883) on [@AetheriaEx](https://x.com/AetheriaEx); the agent fleet begins running 24/7 |
 | **2026-08-20** | Venue deployed to **X Layer Mainnet** (chain 196), block 68469454 |
 | **2026-08-21** | **First autonomous mainnet settlements** - three settled, one refused (below) |
-| **2026-08-21** | Public mainnet launch announced on [@AetheriaEx](https://x.com/AetheriaEx) |
+| **2026-08-21** | [**Public mainnet launch announced**](https://x.com/AetheriaEx) on [@AetheriaEx](https://x.com/AetheriaEx), mentioning @XLayerOfficial |
 
 Eight days of testnet operation sit behind the mainnet launch: the same
 contract, the same agents, and a settlement record that existed before any
