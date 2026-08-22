@@ -511,8 +511,10 @@ economically motivated flow - the only kind the rules count.
 **The AI layer**
 - Co-pilot turning plain English into signed tickets, with voice input and
   wallet-keyed chat memory
-- Live-metric anchoring for fair odds, sharing the resolver's exact data
-  adapters so pricing and settlement never disagree
+- Live-metric anchoring for fair odds **and for drafting**, sharing the
+  resolver's exact data adapters so pricing, threshold choice and settlement
+  never disagree - a drafted threshold too far from the current reading is
+  rejected rather than deployed as a foregone conclusion
 - Provider abstraction: Anthropic structured outputs or **0G Compute**
   decentralized inference
 - Chat memory AES-GCM encrypted client-side and synced to **0G Storage**
@@ -535,8 +537,10 @@ economically motivated flow - the only kind the rules count.
 ### Next
 
 - Verified contract source on the block explorer
-- Live-metric anchoring for the **drafter**, so thresholds are chosen against
-  current readings rather than priors (the odds engine already does this)
+- **A football results feed (SportMonks) as a resolver adapter**, so SPORTS
+  markets settle from final scores the same way PULSE and RWA already settle
+  from DefiLlama and CoinGecko - today they are priced by the AI and resolved
+  by a human, because the resolver will not settle what it cannot read
 - Decentralized resolution: migrate the resolver's adapters to oracle feeds
   and open settlement beyond the owner key
 - Cross-device chat memory: pointer portability for the 0G Storage sync with
